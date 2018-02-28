@@ -1,0 +1,49 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "./node_modules/nodemon/bin/nodemon.js src/app.js --exec 'npm run lint && node'",
+    "lint": "true || ./node_modules/.bin/eslint **/*.js"
+  },
+  "keywords": [],
+  "author": "oscar <oscarrafaelcampos@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt-nodejs": "0.0.3",
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.18.0",
+    "connect-mongo": "latest",
+    "cors": "^2.8.4",
+    "eslint": "^4.6.1",
+    "express": "^4.15.4",
+    "express-session": "latest",
+    "express-validator": "latest",
+    "joi": "^10.6.0",
+    "jsonwebtoken": "^8.0.1",
+    "knex": "latest",
+    "moment": "^2.20.1",
+    "mongoose": "latest",
+    "morgan": "^1.8.2",
+    "nodemailer": "latest",
+    "nodemon": "^1.12.0",
+    "passport": "^0.4.0",
+    "passport-jwt": "^3.0.0",
+    "pg": "latest",
+    "request": "latest",
+    "request-promise": "latest",
+    "safe-buffer": "latest",
+    "sequelize": "^4.8.3",
+    "split-sms": "^0.1.7",
+    "sqlite3": "^3.1.8",
+    "uuid": "latest"
+  },
+  "devDependencies": {
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1"
+  }
+}
