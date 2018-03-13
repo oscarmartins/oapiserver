@@ -23,7 +23,6 @@
     "joi": "^10.6.0",
     "jsonwebtoken": "^8.0.1",
     "knex": "latest",
-    "moment": "latest",
     "mongoose": "latest",
     "morgan": "^1.8.2",
     "nodemailer": "latest",
