@@ -5,6 +5,7 @@ const HistoriesController = require('./controllers/HistoriesController')
 const isAuthenticated = require('./policies/isAuthenticated')
 const MailerController = require('./controllers/MailerController')
 const ApiController = require('./controllers/ApiController')
+const ApiEndpoint = require('./controllers/endpoint')
 
 module.exports = (app) => {
   app.post('/register', AccountController.execute)
@@ -15,7 +16,10 @@ module.exports = (app) => {
   app.post('/services', AccountController.execute)
   app.get('/services', AccountController.execute)
 
-  app.get('/api/fetchApiPolicy', ApiController.fetchApiPolicy)
+  app.post('/orcv2', ApiEndpoint.execute)
+  app.get('/orcv2', ApiEndpoint.execute)
+
+  app.get('/orcv2/fetchApiPolicy', ApiController.fetchApiPolicy)
 
   app.get('/emailer', isAuthenticated, MailerController.fetchProfiles)
   app.get('/emailer/:profileid', isAuthenticated, MailerController.retrieveProfileById)
