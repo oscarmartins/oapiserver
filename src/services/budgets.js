@@ -1,8 +1,12 @@
+const nodemailer = require('nodemailer')
 const resultOutput = require('../utils/Utils')['resultOutput']
-
+const {modelBudget} = require('../models')
+const emailExpresscleanPt = require('/opt/orccontext')['email_expressclean_pt']
 var localContext = null
 
 var inputfields = {
+    budgetDomain: '',
+    budgetType: 0,
     budgetName: '',
     budgetEmail: '',
     budgetMobile: '',
@@ -47,15 +51,43 @@ function serviceType(tp) {
         case 'LVF':
           txtLbl = 'Limpeza vidros/fachadas'
           break;  
-        default:
-            break;
     }
     return txtLbl
 }
 
+async function notificator (message) {
+  console.log(emailExpresscleanPt)
+  let transporter = nodemailer.createTransport({
+    host: emailExpresscleanPt.host,
+    port: emailExpresscleanPt.port,
+    secure: emailExpresscleanPt.secure, // true for 465, false for other ports
+    auth: {
+      user: emailExpresscleanPt.user, // generated ethereal user
+      pass: emailExpresscleanPt.pass // generated ethereal password
+    }
+  })
+
+  message.from = emailExpresscleanPt.user
+
+  transporter.sendMail(message, (error, info) => {
+    if (error) {
+      let maillogerror = '*** email error logger ***\n'
+      maillogerror += error
+      maillogerror += '\n'
+      maillogerror += 'message= ' + JSON.stringify(message)
+      return console.log(maillogerror)
+    }
+    console.log('Message sent: %s', info.messageId)
+    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info))
+  })
+}
+
 async function budgetsRequest (context) {
     localContext = context
-    return resultOutput.resultOutputDataOk(serviceType(context.main.REQ_INPUTS.budgetSeviceType))
+
+    await notificator({to:'oscarrafaelcampos@gmail.com', subject:'budgets tester', text:'text tester email budgets!!!√'})
+
+    return resultOutput.resultOutputDataOk(serviceType(localContext.main.REQ_INPUTS.budgetSeviceType))
 }
 
 const local = {
