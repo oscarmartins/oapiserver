@@ -30,7 +30,11 @@ const OPTIONS = {
   onFetchCustomerProfile: 6010,
   onUpdateCustomerProfile: 6020,
   ORC_API: 7007,
-  fetchApiPolicy: 7017
+  fetchApiPolicy: 7017,
+  services: {
+    root: 996699,
+    budgetsRequest: 1000
+  }
 }
 
 module.exports = OPTIONS

@@ -1,0 +1,55 @@
+const ERROR_MISSING_REQ_PAR_01 = 'Error [Parameter] [missing REQ_CONTEXT]'
+const ERROR_MISSING_REQ_PAR_02 = 'Error [Parameter] [missing REQ_ACTION]'
+const ERROR_MISSING_REQ_PAR_03 = 'Error [Parameter] [missing REQ_INPUTS]'
+const ERROR_MISSING_REQ_PAR_04 = 'Error [Http] [missing httpRequest]'
+const ERROR_MISSING_REQ_PAR_05 = 'Error [Http] [missing httpResponse]'
+
+const main = this
+main['httpRequest'] = null
+main['httpResponse'] = null
+main['REQ_CONTEX'] = 0
+main['REQ_ACTION'] = 0
+main['REQ_INPUTS'] = {}
+
+function init (req, res) {
+  main.httpRequest = req
+  main.httpResponse = res
+  return main
+}
+
+async function preparams () {
+  let msg = null
+  if (!main.httpRequest) { msg = ERROR_MISSING_REQ_PAR_04 }
+  if (!main.httpResponse) { msg = ERROR_MISSING_REQ_PAR_05 }
+
+  const body = main.httpRequest.body
+  const {REQ_CONTEX, REQ_ACTION, REQ_INPUTS} = body
+
+  if (!REQ_CONTEX) { msg = ERROR_MISSING_REQ_PAR_01 }
+  if (!REQ_ACTION) { msg = ERROR_MISSING_REQ_PAR_02 }
+  if (!REQ_INPUTS) { msg = ERROR_MISSING_REQ_PAR_03 }
+  if (msg) { return {isok: false, error: msg} }
+
+  main.REQ_CONTEX = REQ_CONTEX
+  main.REQ_ACTION = REQ_ACTION
+  main.REQ_INPUTS = REQ_INPUTS
+  
+  /** use debug mode */
+  console.log(main.REQ_CONTEX, main.REQ_ACTION, main.REQ_INPUTS)
+
+  return {isok: true, error: null}
+}
+
+async function responseSender (result) {
+  instance.main.httpResponse.status(result.status).send(result.output)
+  return result
+}
+
+const instance = {
+  init: (req, res) => {return init(req, res)},
+  main: main,
+  preparams: preparams,
+  responseSender: (result) => {return responseSender(result)}
+}
+
+module.exports = instance

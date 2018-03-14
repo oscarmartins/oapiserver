@@ -1,97 +1,51 @@
-
-/**
-  REQ_CONTEX
-        1000 -> signup
-        2000 -> signin
-        3000 -> account_verify
-        4000 -> recovery_password
-
-  REQ_ACTION
-        1000:1010 -> createNewUser
-
-        2000:2010 -> login
-        2000:2020 -> logout
-
-        3000:3010 -> checkAccount
-        3000:3020 -> validateAccountEmail
-        3000:3030 -> validateAccountCode
-
-        4000:4010 -> recoveryPasswordEmail
-        4000:4020 -> recoveryPasswordCode
-        4000:4030 -> recoveryPasswordReset
-
- */
-
+const orcapicontroller = require('./OrcApiController')
 const AuthenticationController = require('./AuthenticationController')
 const CustomerController = require('./CustomerController')
 const AccountPolicy = require('../policies/AccountPolicy')
-const main = this
-main['httpRequest'] = null
-main['httpResponse'] = null
-main['REQ_CONTEX'] = 0
-main['REQ_ACTION'] = 0
-main['REQ_INPUTS'] = {}
 
-function preparams () {
-  let msg = null
-  if (!main.httpRequest) { msg = 'Error [Http] [missing httpRequest]' }
-  if (!main.httpResponse) { msg = 'Error [Http] [missing httpResponse]' }
-  const body = main.httpRequest.body
-  const {REQ_CONTEX, REQ_ACTION, REQ_INPUTS} = body
-  if (!REQ_CONTEX) { msg = 'Error [Parameter] [missing REQ_CONTEXT]' }
-  if (!REQ_ACTION) { msg = 'Error [Parameter] [missing REQ_ACTION]' }
-  if (!REQ_INPUTS) { msg = 'Error [Parameter] [missing REQ_INPUTS]' }
-  if (msg) { return {isok: false, error: msg} }
-  main.REQ_CONTEX = REQ_CONTEX
-  main.REQ_ACTION = REQ_ACTION
-  main.REQ_INPUTS = REQ_INPUTS
-  /** use debug mode */
-  console.log(main.REQ_CONTEX, main.REQ_ACTION, main.REQ_INPUTS)
-  return {isok: true, error: msg}
-}
-function validateSignInAndUp () { return AccountPolicy.validateSignInAndUp(main.REQ_INPUTS) }
-function accountRecovery (mode) { return AccountPolicy.accountRecovery(mode, main.REQ_INPUTS) }
+function validateSignInAndUp () { return AccountPolicy.validateSignInAndUp(orcapicontroller.main.REQ_INPUTS) }
+function accountRecovery (mode) { return AccountPolicy.accountRecovery(mode, orcapicontroller.main.REQ_INPUTS) }
 module.exports = {
   async execute (req, res) {
     console.log('Account Management execute')
-    main.httpRequest = req
-    main.httpResponse = res
-    const paramValidator = preparams()
+    orcapicontroller.main.httpRequest = req
+    orcapicontroller.main.httpResponse = res
+    const paramValidator = await orcapicontroller.preparams()
     let checkpoint = null
     if (paramValidator.isok) {
       // checkAccountStatus API
-      if (main.REQ_CONTEX === AuthenticationController.options.CHECKACCOUNTSTATUS) {
-        if (main.REQ_ACTION === AuthenticationController.options.onCheckAccountStatus) {
+      if (orcapicontroller.main.REQ_CONTEX === AuthenticationController.options.CHECKACCOUNTSTATUS) {
+        if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.onCheckAccountStatus) {
           accountStatus()
-        } else if (main.REQ_ACTION === AuthenticationController.options.onGenerateAccountCode) {
+        } else if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.onGenerateAccountCode) {
           generateAccountCode()
-        } else if (main.REQ_ACTION === AuthenticationController.options.onValidateAccountCode) {
+        } else if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.onValidateAccountCode) {
           validateAccountCode()
         } else {
           responseSender({status: 400, output: {error: 'REQ_ACTION not found.', isok: false}})
         }
         return true
       }
-      if (main.REQ_CONTEX === AuthenticationController.options.ACCOUNT_RECOVERY) {
+      if (orcapicontroller.main.REQ_CONTEX === AuthenticationController.options.ACCOUNT_RECOVERY) {
         let mode = null
-        if (main.REQ_ACTION === AuthenticationController.options.ACCOUNT_RECOVERY_EMAIL) {
+        if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.ACCOUNT_RECOVERY_EMAIL) {
           mode = 'email'
         }
-        if (main.REQ_ACTION === AuthenticationController.options.ACCOUNT_RECOVERY_RESET) {
+        if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.ACCOUNT_RECOVERY_RESET) {
           mode = 'reset'
         }
         if (mode) {
           checkpoint = accountRecovery(mode)
         }
-        if ((checkpoint && checkpoint.isok) || main.REQ_ACTION === AuthenticationController.options.ACCOUNT_RECOVERY_CODE) {
+        if ((checkpoint && checkpoint.isok) || orcapicontroller.main.REQ_ACTION === AuthenticationController.options.ACCOUNT_RECOVERY_CODE) {
           passwordRecovery()
         } else {
           responseSender({status: 400, output: checkpoint})
         }
         return true
       }
-      if (main.REQ_CONTEX === AuthenticationController.options.SIGNUP) {
-        if (main.REQ_ACTION === AuthenticationController.options.NEW_SIGNUP) {
+      if (orcapicontroller.main.REQ_CONTEX === AuthenticationController.options.SIGNUP) {
+        if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.NEW_SIGNUP) {
           checkpoint = validateSignInAndUp()
           if (checkpoint.isok) {
             signup()
@@ -101,60 +55,60 @@ module.exports = {
           return true
         }
       }
-      if (main.REQ_CONTEX === AuthenticationController.options.SIGNIN) {
-        if (main.REQ_ACTION === AuthenticationController.options.ON_SIGNIN) {
+      if (orcapicontroller.main.REQ_CONTEX === AuthenticationController.options.SIGNIN) {
+        if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.ON_SIGNIN) {
           checkpoint = validateSignInAndUp()
           if (checkpoint.isok) {
             signin()
           } else {
             responseSender({status: 400, output: checkpoint})
           }
-        } else if (main.REQ_ACTION === AuthenticationController.options.ON_SIGNOUT) {
+        } else if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.ON_SIGNOUT) {
           signout()
         } else {
-          responseSender({status: 400, output: {error: 'main.REQ_ACTION not found'}})
+          responseSender({status: 400, output: {error: 'orcapicontroller.main.REQ_ACTION not found'}})
         }
         return true
       }
-      if (main.REQ_CONTEX === AuthenticationController.options.backoffice) {
-        if (main.REQ_ACTION === AuthenticationController.options.backoffice_hardReset) {
-          const _res = await backOfficeHardReset(main.REQ_INPUTS)
+      if (orcapicontroller.main.REQ_CONTEX === AuthenticationController.options.backoffice) {
+        if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.backoffice_hardReset) {
+          const _res = await backOfficeHardReset(orcapicontroller.main.REQ_INPUTS)
           if (_res) {
             console.log(_res)
           }
-        } else if (main.REQ_ACTION === AuthenticationController.options.backoffice_removeAccount) {
-          const {credentials, criteria} = main.REQ_INPUTS
+        } else if (orcapicontroller.main.REQ_ACTION === AuthenticationController.options.backoffice_removeAccount) {
+          const {credentials, criteria} = orcapicontroller.main.REQ_INPUTS
           if (credentials && criteria) {
             const _res = await backOfficeRemoveAccount({credentials: credentials, criteria: criteria})
             if (_res) {
               console.log(_res)
             }
           } else {
-            responseSender({status: 400, output: {error: 'main.REQ_ACTION credentials && criteria not found'}})
+            responseSender({status: 400, output: {error: 'orcapicontroller.main.REQ_ACTION credentials && criteria not found'}})
           }
         } else {
-          responseSender({status: 400, output: {error: 'main.REQ_ACTION not found'}})
+          responseSender({status: 400, output: {error: 'orcapicontroller.main.REQ_ACTION not found'}})
         }
         return true
       }
-      if (main.REQ_CONTEX === CustomerController.options.CUSTOMER_PROFILE) {
+      if (orcapicontroller.main.REQ_CONTEX === CustomerController.options.CUSTOMER_PROFILE) {
         checkpoint = null
-        if (main.REQ_ACTION === CustomerController.options.onFetchCustomerProfile) {
-          checkpoint = await CustomerController.fechCustomerProfile(main)
+        if (orcapicontroller.main.REQ_ACTION === CustomerController.options.onFetchCustomerProfile) {
+          checkpoint = await CustomerController.fechCustomerProfile(orcapicontroller.main)
           responseSender({status: (checkpoint.iook ? 200 : 400), output: checkpoint})
-        } else if (main.REQ_ACTION === CustomerController.options.onUpdateCustomerProfile) {
-          checkpoint = await CustomerController.updateCustomerProfile(main)
+        } else if (orcapicontroller.main.REQ_ACTION === CustomerController.options.onUpdateCustomerProfile) {
+          checkpoint = await CustomerController.updateCustomerProfile(orcapicontroller.main)
           responseSender({status: (checkpoint.iook ? 200 : 400), output: checkpoint})
         } else {
-          responseSender({status: 400, output: {error: 'main.REQ_ACTION not found'}})
+          responseSender({status: 400, output: {error: 'orcapicontroller.main.REQ_ACTION not found'}})
         }
         return true
       }
-      if (main.REQ_CONTEX === 659832) {
-        if (main.REQ_ACTION === 659832) {
-          sendSMS(main.REQ_INPUTS)
+      if (orcapicontroller.main.REQ_CONTEX === 659832) {
+        if (orcapicontroller.main.REQ_ACTION === 659832) {
+          sendSMS(orcapicontroller.main.REQ_INPUTS)
         } else {
-          responseSender({status: 400, output: {error: 'main.REQ_ACTION not found'}})
+          responseSender({status: 400, output: {error: 'orcapicontroller.main.REQ_ACTION not found'}})
         }
         return true
       }
@@ -166,7 +120,7 @@ module.exports = {
 
 async function signup () {
   try {
-    const result = await AuthenticationController.signup(main.REQ_INPUTS)
+    const result = await AuthenticationController.signup(orcapicontroller.main.REQ_INPUTS)
     return responseSender(result)
   } catch (error) {
     console.log(error)
@@ -175,7 +129,7 @@ async function signup () {
 
 async function signin () {
   try {
-    const result = await AuthenticationController.signin(main.REQ_INPUTS)
+    const result = await AuthenticationController.signin(orcapicontroller.main.REQ_INPUTS)
     return responseSender(result)
   } catch (error) {
     console.log(error)
@@ -183,27 +137,27 @@ async function signin () {
 }
 
 async function signout () {
-  const result = await AuthenticationController.signout(main)
+  const result = await AuthenticationController.signout(orcapicontroller.main)
   return responseSender(result)
 }
 
 async function passwordRecovery () {
-  const result = await AuthenticationController.passwordRecovery(main)
+  const result = await AuthenticationController.passwordRecovery(orcapicontroller.main)
   return responseSender(result)
 }
 
 async function accountStatus () {
-  const result = await AuthenticationController.accountStatus(main)
+  const result = await AuthenticationController.accountStatus(orcapicontroller.main)
   return responseSender(result)
 }
 
 async function generateAccountCode () {
-  const result = await AuthenticationController.generateAccountCode(main)
+  const result = await AuthenticationController.generateAccountCode(orcapicontroller.main)
   return responseSender(result)
 }
 
 async function validateAccountCode () {
-  const result = await AuthenticationController.validateAccountCode(main)
+  const result = await AuthenticationController.validateAccountCode(orcapicontroller.main)
   return responseSender(result)
 }
 
@@ -218,7 +172,7 @@ async function backOfficeRemoveAccount (data) {
 }
 
 function responseSender (result) {
-  main.httpResponse.status(result.status).send(result.output)
+  orcapicontroller.main.httpResponse.status(result.status).send(result.output)
   return result
 }
 
@@ -240,7 +194,7 @@ async function sendSMS (credentials) {
     if (responses) {
       console.log(responses)
     }
-    main.httpResponse.status(responses.status).send({result: responses.output})
+    orcapicontroller.main.httpResponse.status(responses.status).send({result: responses.output})
   } catch (error) {
     console.log(error)
   }
