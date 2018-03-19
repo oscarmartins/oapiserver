@@ -56,7 +56,6 @@ function serviceType(tp) {
 }
 
 async function notificator (message) {
-  console.log(emailExpresscleanPt)
   let transporter = nodemailer.createTransport({
     host: emailExpresscleanPt.host,
     port: emailExpresscleanPt.port,
@@ -69,25 +68,36 @@ async function notificator (message) {
 
   message.from = emailExpresscleanPt.user
 
-  transporter.sendMail(message, (error, info) => {
+  const output = await transporter.sendMail(message).then(function(info){
+    var log = `Message sent: ${info.messageId} - `
+    log += `Preview URL: ${nodemailer.getTestMessageUrl(info)}`
+    return resultOutput.resultOutputSuccess(log)
+  }).catch(function(error){
     if (error) {
       let maillogerror = '*** email error logger ***\n'
       maillogerror += error
       maillogerror += '\n'
       maillogerror += 'message= ' + JSON.stringify(message)
-      return console.log(maillogerror)
+      return resultOutput.resultOutputError(maillogerror)
     }
-    console.log('Message sent: %s', info.messageId)
-    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info))
+    return resultOutput.resultOutputError('error desconhecido')
   })
+  return output
 }
 
 async function budgetsRequest (context) {
     localContext = context
 
-    await notificator({to:'oscarrafaelcampos@gmail.com', subject:'budgets tester', text:'text tester email budgets!!!√'})
+    const tryNotify = await notificator({to:'oscarrafaelcampos@gmail.com', subject:'budgets tester', text:'text tester email budgets!!!√'})
+    if(tryNotify.iook){
+//todo
+    } else {
+//todo
+    }
 
-    return resultOutput.resultOutputDataOk(serviceType(localContext.main.REQ_INPUTS.budgetSeviceType))
+    // serviceType(localContext.main.REQ_INPUTS.budgetSeviceType)
+
+    return resultOutput.resultOutputDataOk(tryNotify)
 }
 
 const local = {
