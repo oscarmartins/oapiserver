@@ -4,7 +4,7 @@ const {modelBudget} = require('../models')
 const emailExpresscleanPt = require('/opt/orccontext')['email_expressclean_pt']
 var localContext = null
 
-var inputfields = {
+const inputfields = Object.freeze({
     budgetDomain: '',
     budgetType: 0,
     budgetName: '',
@@ -18,7 +18,7 @@ var inputfields = {
     budgetWc: '',
     budgetArea: '',
     budgetObserva: ''
-}
+})
 
 /**
  * 
@@ -67,7 +67,6 @@ async function createTransport() {
   })
 }
 
-
 async function notificator (message) {  
   let transporter = await createTransport().then(function(tporter){
     if (tporter) {
@@ -102,8 +101,21 @@ async function notificator (message) {
   
 }
 
+async function checkParameters(payload) {
+  var iook = true, success = 'input fields valid', error = 'input fields not valid: '
+  for (var key in inputfields) {
+    if (!payload.hasOwnProperty(key)) {
+      validator = false
+      break
+    }   
+  }
+  return resultOutput(iook, success, error, null)
+}
+
 async function budgetsRequest (context) {
     localContext = context
+
+    // todo await checkParameters(localContext.main.REQ_INPUTS)
 
     const tryNotify = await notificator({to:'oscarrafaelcampos@gmail.com', subject:'budgets tester', text:'text tester email budgets!!!√'})
     
