@@ -55,8 +55,8 @@ function serviceType(tp) {
     return txtLbl
 }
 
-async function notificator (message) {
-  let transporter = nodemailer.createTransport({
+async function createTransport() {
+  return nodemailer.createTransport({
     host: emailExpresscleanPt.host,
     port: emailExpresscleanPt.port,
     secure: emailExpresscleanPt.secure, // true for 465, false for other ports
@@ -65,34 +65,52 @@ async function notificator (message) {
       pass: emailExpresscleanPt.pass // generated ethereal password
     }
   })
+}
 
-  message.from = emailExpresscleanPt.user
 
-  const output = await transporter.sendMail(message).then(function(info){
-    var log = `Message sent: ${info.messageId} - `
-    log += `Preview URL: ${nodemailer.getTestMessageUrl(info)}`
-    return resultOutput.resultOutputSuccess(log)
-  }).catch(function(error){
-    if (error) {
-      let maillogerror = '*** email error logger ***\n'
-      maillogerror += error
-      maillogerror += '\n'
-      maillogerror += 'message= ' + JSON.stringify(message)
-      return resultOutput.resultOutputError(maillogerror)
-    }
-    return resultOutput.resultOutputError('error desconhecido')
+async function notificator (message) {  
+  let transporter = await createTransport().then(function(tporter){
+    if (tporter) {
+      message.from = emailExpresscleanPt.user
+      return tporter.sendMail(message).then(function (info) {
+        var log = `Message sent: ${info.messageId} - `
+        log += `Preview URL: ${nodemailer.getTestMessageUrl(info)}`
+        return resultOutput.resultOutputSuccess(log)
+      }).catch(function (error) {
+        if (error) {
+          let maillogerror = '*** email error logger ***\n'
+          maillogerror += error
+          maillogerror += '\n'
+          maillogerror += 'message= ' + JSON.stringify(message)
+          return resultOutput.resultOutputError(maillogerror)
+        }
+        return resultOutput.resultOutputError('error sendEmail ??? desconhecido')
+      })
+    } else {
+      return resultOutput.resultOutputError('argumento errado')
+    }   
+  }).catch(function(err){
+    console.log(err)
+    return null
   })
-  return output
+
+  if (transporter) {
+    return transporter
+  } else {
+    return resultOutput.resultOutputError('Erro ao enviar email')
+  }
+  
 }
 
 async function budgetsRequest (context) {
     localContext = context
 
     const tryNotify = await notificator({to:'oscarrafaelcampos@gmail.com', subject:'budgets tester', text:'text tester email budgets!!!√'})
-    if(tryNotify.iook){
-//todo
+    
+    if(tryNotify && tryNotify.iook){
+      console.log('iook')
     } else {
-//todo
+      console.log('no iook')
     }
 
     // serviceType(localContext.main.REQ_INPUTS.budgetSeviceType)
