@@ -12,7 +12,7 @@ async function budgets () {
     switch (orcapicontroller.main.REQ_ACTION) {
       case apiPolicy.services.budgetsRequest:       
         result = await _budgets.budgetsRequest(orcapicontroller)        
-        orcapicontroller.responseSender({status: 200, output: result})
+        orcapicontroller.responseSender({status: 200, output: result.data})
       break;    
     default:
         resolveError({error: 'Error [Budgets service not found] budgets()' })
