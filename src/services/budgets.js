@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer')
 const resultOutput = require('../utils/Utils')['resultOutput']
 const {budgets} = require('../models')
-const emailExpresscleanPt = require('/opt/orccontext')['email_expressclean_pt']
+const emailsafecleanpt = require('/opt/orccontext')['email_safeclean_pt']
 
 const BUDGET_CALLBACK = 10
 const BUDGET_FORM = 20
@@ -9,92 +9,136 @@ const BUDGET_SUPPORT = 30
 
 var localContext = null
 
+const LIMPDOMESTICA ='LD'
+const LIMPCONDOMINIOS = 'LC'
+const LIMPESCRITORIOS = 'LE'
+const LIMPARMAZENS = 'LA'
+const LIMPPOSOBRA = 'LPO'
+const LIMPMUDANCAS = 'LPM'
+const LIMPVIDROS = 'LVF'
+
+const INPUT_FIELDS = [
+  'budgetName', //0
+  'budgetEmail', //1 
+  'budgetMobile', //2  
+  'budgetStreet', //3
+  'budgetCity', //4
+  'budgetTipologia', //5 
+  'budgetFloor', //6
+  'budgetBedRooms', //7
+  'budgetRooms', //8
+  'budgetWc', //9
+  'budgetArea', //10
+  'budgetFocos', //11
+  'budgetObserva', //12,
+  'budgetWindows', //13,
+  'budgetPortNumber' //14
+  ]
+
 const inputfields = Object.freeze({
     budgetDomain: {
+      name: 'budgetDomain',
+      label: 'Dominio ',
       required: [BUDGET_CALLBACK, BUDGET_FORM, BUDGET_SUPPORT]
     },
     budgetType: {
+      name: 'budgetType',
+      label: 'Tipo ',
       required: [BUDGET_CALLBACK, BUDGET_FORM, BUDGET_SUPPORT]
     },
     budgetName: {
+      name: 'budgetName',
+      label: 'Nome ',
       required: [BUDGET_CALLBACK, BUDGET_FORM, BUDGET_SUPPORT]
     },
     budgetEmail: {
+      name: 'budgetEmail',
+      label: 'Email ',
       required: [BUDGET_FORM, BUDGET_SUPPORT]
     },
     budgetMobile: {
+      name: 'budgetMobile',
+      label: 'Contacto ',
       required: [BUDGET_CALLBACK, BUDGET_FORM, BUDGET_SUPPORT]
     },
     budgetStreet: {
+      name: 'budgetStreet',
+      label: 'Morada ',
+      required: [BUDGET_FORM]
+    },
+    budgetPortNumber: {
+      name: 'budgetPortNumber',
+      label: 'Nº Porta',
       required: [BUDGET_FORM]
     },
     budgetCity: {
+      name: 'budgetCity',
+      label: 'Cidade ',
       required: [BUDGET_FORM]
     },
     budgetSeviceType: {
+      name: 'budgetSeviceType',
+      label: 'Tipo de Limpeza',
       required: [BUDGET_FORM]
     },
     budgetBedRooms: {
+      name: 'budgetBedRooms',
+      label: 'Nº  Quartos ',
       required: [BUDGET_FORM]
     },
     budgetRooms: {
+      name: 'budgetRooms',
+      label: 'Nº  Salas',
       required: [BUDGET_FORM]
     },
     budgetWc: {
+      name: 'budgetWc',
+      label: 'Nº  Casa Banho ',
       required: [BUDGET_FORM]
     },
-    budgetArea: {
+    budgetTipologiaSelect: {
+      name: 'budgetTipologiaSelect',
+      label: 'Tipologia',
       required: [BUDGET_FORM]
+    },
+    budgetTipologia: {
+      name: 'budgetTipologia',
+      label: 'Outra Tipologia ',
+      required: [BUDGET_FORM]
+    },
+    budgetFloor: {
+      name: 'budgetFloor',
+      label: 'Nº  Pisos ',
+      required: [BUDGET_FORM]
+    },
+    budgetFocos: {
+      name: 'budgetFocos',
+      label: 'Nº  Focos ',
+      required: [BUDGET_FORM]
+    },    
+    budgetWindows: {
+      name: 'budgetWindows',
+      label: 'Nº  Janelas ',
+      required: [BUDGET_FORM]
+    },        
+    budgetArea: {
+      name: 'budgetArea',
+      label: 'Area Aprox. ',
+      required: []
     },
     budgetObserva: {
+      name: 'budgetObserva',
+      label: 'Observações ',
       required: [BUDGET_FORM, BUDGET_SUPPORT]
     }
 })
 
 function labelHelper(label) {
-  var text = label
-  switch (label) {
-    case 'budgetDomain':
-      text = 'Dominio'
-      break
-    case 'budgetType':
-      text = 'Tipo '
-      break
-    case 'budgetName':
-      text = 'Nome'
-      break
-    case 'budgetEmail':
-      text = 'Email'
-      break
-    case 'budgetMobile':
-      text = 'Contacto'
-      break
-    case 'budgetStreet':
-      text = 'Morada'
-      break
-    case 'budgetCity':
-      text = 'Cidade'
-      break
-    case 'budgetSeviceType':
-      text = 'Tipo de Limpeza'
-      break
-    case 'budgetBedRooms':
-      text = 'Número Quartos'
-      break
-    case 'budgetRooms':
-      text = 'Número Salas'
-      break
-    case 'budgetWc':
-      text = 'Número Casa Banho'
-      break
-    case 'budgetArea':
-      text = 'Area Aprox.'
-      break
-    case 'budgetObserva':
-      text = 'Observações'
-      break
+  const tmp = inputfields[label]
+  if (tmp) {
+    return tmp.label
   }
-  return text
+  return label
 }
 
 /**
@@ -110,22 +154,25 @@ function labelHelper(label) {
 function serviceType(tp) {
     let txtLbl = tp
     switch (tp) {
-        case 'LD':
+        case LIMPDOMESTICA:
           txtLbl = 'Limpeza doméstica'            
           break;
-        case 'LC':
+        case LIMPCONDOMINIOS:
           txtLbl = 'Limpeza de condomínios'            
           break;
-        case 'LCL':
-          txtLbl = 'Limpeza comercial'            
+        case LIMPESCRITORIOS:
+          txtLbl = 'Limpeza escritórios'            
           break;
-        case 'LPO':
+        case LIMPPOSOBRA:
           txtLbl = 'Limpeza pós-obras'
           break; 
-        case 'LPM':
+        case LIMPARMAZENS:
+          txtLbl = 'Limpeza armazens'
+          break; 
+        case LIMPMUDANCAS:
           txtLbl = 'Limpeza pré-mudanças'
           break;        
-        case 'LVF':
+        case LIMPVIDROS:
           txtLbl = 'Limpeza vidros/fachadas'
           break;  
     }
@@ -134,20 +181,32 @@ function serviceType(tp) {
 
 async function createTransport() {
   return nodemailer.createTransport({
-    host: emailExpresscleanPt.host,
-    port: emailExpresscleanPt.port,
-    secure: emailExpresscleanPt.secure, // true for 465, false for other ports
+    host: emailsafecleanpt.host,
+    port: emailsafecleanpt.port,
+    secure: emailsafecleanpt.secure, // true for 465, false for other ports
     auth: {
-      user: emailExpresscleanPt.user, // generated ethereal user
-      pass: emailExpresscleanPt.pass // generated ethereal password
+      user: emailsafecleanpt.user, // generated ethereal user
+      pass: emailsafecleanpt.pass // generated ethereal password
     }
   })
 }
 
 async function Notificator (message) {  
+
+  if(message.hasOwnProperty('html')){
+    var bodymail = '<p>---</p>'
+    bodymail += '<p>Cumprimentos,</p>'
+    bodymail += '<p><span style="font-family: \'andale mono\', monospace; font-size: 8pt;">(Dep. Comercial)</span></p>'
+    bodymail += '<p><span style="font-size: 10pt; font-family: verdana, geneva, sans-serif;">'
+    bodymail += '<img id="c26ef759-1d6c-4869-b4be-b2c2afa368a6" class="upload-image-379 aspect-ratio" style="max-width: 100%;" src="http://pim.safeclean.pt/ajax/image/snippet/image?id=1&amp;uid=c26ef759-1d6c-4869-b4be-b2c2afa368a6" alt="" /></span></p>'
+    bodymail += '<p><span style="color: #284d71;"><u>914423370 </u></span>-  <a href="http://www.safeclean.pt">www.safeclean.pt </a>                                        </p>'
+    bodymail += '<p> </p>'
+    message.html += bodymail
+  }
+
   let transporter = await createTransport().then(function(tporter){
     if (tporter) {
-      message.from = emailExpresscleanPt.user
+      message.from = emailsafecleanpt.user
       return tporter.sendMail(message).then(function (info) {
         var log = `Message sent: ${info.messageId} - `
         log += `Preview URL: ${nodemailer.getTestMessageUrl(info)}`
@@ -179,26 +238,92 @@ async function Notificator (message) {
 }
 
 function requiredParameters (a, b) {
-  return inputfields[a].required.indexOf(b) != -1
+  return inputfields[a].required.indexOf(Number(b)) >= 0
+}
+
+function validateBudgetFieldForm(key, payload) {
+  var validateField = false
+  const showFieldsGroup = []
+  const budgetSeviceType = payload['budgetSeviceType']
+
+  if (budgetSeviceType) {
+
+    showFieldsGroup.push(INPUT_FIELDS[0])
+    showFieldsGroup.push(INPUT_FIELDS[1])
+    showFieldsGroup.push(INPUT_FIELDS[2])
+    showFieldsGroup.push(INPUT_FIELDS[3])
+    showFieldsGroup.push(INPUT_FIELDS[4])
+    showFieldsGroup.push(INPUT_FIELDS[14])
+
+    if (payload['budgetTipologiaSelect'] === 'TT') {
+      showFieldsGroup.push(INPUT_FIELDS[5])
+    }
+
+    switch (budgetSeviceType) {
+      case LIMPDOMESTICA:
+      case LIMPMUDANCAS:
+      case LIMPPOSOBRA:
+      default:
+        showFieldsGroup.push(INPUT_FIELDS[7])
+        showFieldsGroup.push(INPUT_FIELDS[8])
+        showFieldsGroup.push(INPUT_FIELDS[9])
+        showFieldsGroup.push(INPUT_FIELDS[6])
+        //showFieldsGroup.push(INPUT_FIELDS[10]);
+        break;
+      case LIMPCONDOMINIOS:
+        showFieldsGroup.push(INPUT_FIELDS[6])
+        showFieldsGroup.push(INPUT_FIELDS[10])
+        showFieldsGroup.push(INPUT_FIELDS[11])
+        break;
+      case LIMPESCRITORIOS:
+      case LIMPARMAZENS:
+        showFieldsGroup.push(INPUT_FIELDS[6])
+        showFieldsGroup.push(INPUT_FIELDS[10])
+        break;
+      case LIMPVIDROS:
+        showFieldsGroup.push(INPUT_FIELDS[10])
+        showFieldsGroup.push(INPUT_FIELDS[13])
+        break;
+    }  
+
+    showFieldsGroup.forEach(function (name, position, allarr) {
+      if (name === key) {
+        validateField = true
+        return
+      }
+    })
+   
+  }
+
+  return validateField
 }
 
 async function checkParameters (payload) {
   const budgetType = payload['budgetType'] || false
   var iook = true, success = 'input fields valid', error = null
-  for (var key in inputfields) {
-    if (!budgetType || !payload.hasOwnProperty(key)) {
-      error = 'Error parameter {{key}} not exist!'.replace('{{key}}', key)
-      break
-    } else {
-      if (!requiredParameters(key, budgetType)) {
-        continue
-      }
-      var _value = payload[key]
-      if (typeof _value === "undefined" || _value.length <= 0){
-        error = 'Error parameter {{key}} value not valid!'.replace('{{key}}', key)
+  if (budgetType && budgetType === BUDGET_FORM && !payload['budgetSeviceType']) {
+    error = 'Error parameter {{key}} required!'.replace('{{key}}', budgetType ? 'budgetSeviceType' : 'budgetType')
+  } else {
+    for (var key in inputfields) {
+      if (!budgetType || !payload.hasOwnProperty(key)) {
+        error = 'Error parameter {{key}} not exist!'.replace('{{key}}', key)
         break
-      }
-    }   
+      } else {        
+        if (!requiredParameters(key, budgetType)) {
+          continue
+        }
+        var _value = payload[key]
+  
+        if (budgetType && Number(budgetType) === BUDGET_FORM && !validateBudgetFieldForm(key, payload)){
+            continue
+        }
+
+        if (typeof _value === "undefined" || _value.length <= 0){
+          error = 'Deve indicar um valor para {{key}}.'.replace('{{key}}', labelHelper(key))
+          break
+        }
+      }   
+    }
   }
   
   if (error) {
@@ -211,17 +336,21 @@ async function budgetsRequest (context) {
     localContext = context
 
     const params = await checkParameters(localContext.main.REQ_INPUTS)    
-
+    
     if (params && params.iook) {
 
       const budgetDoc = new budgets(localContext.main.REQ_INPUTS)
+      budgetDoc.budgetClientIp = localContext.main.httpRequest.connection.remoteAddress
+      budgetDoc.budgetDomain = localContext.main.httpRequest.headers.host
       budgetDoc.dateCreated = Date.now()
       budgetDoc.dateUpdated = Date.now()      
       const saveBudget = await budgetDoc.save(true).then(async function (docs) {
         var subject = '', bodymail = '', emaildata = {}, tryNotify = null
+        
         if (docs.budgetType && docs.budgetType === BUDGET_FORM) {
           subject = 'Pedido de Orçamento - [[name]], [[street]]'.replace('[[name]]', docs.budgetName).replace('[[street]]', docs.budgetCity)
           bodymail = '<h2>{{subtitle}}</h2>'.replace('{{subtitle}}', subject)
+          bodymail += '<p>id: {{orcid}}</p>'.replace('{{orcid}}',  docs._id)
           bodymail += '<ul>'
           for (var key in inputfields) {
             if (docs.hasOwnProperty(key) || docs[key]) {
@@ -233,7 +362,7 @@ async function budgetsRequest (context) {
           bodymail += '</ul>'
 
           emaildata = {
-            to: 'geral@expressclean.pt',
+            to: 'geral@safeclean.pt',
             subject: subject,
             html: bodymail
           }
@@ -245,7 +374,8 @@ async function budgetsRequest (context) {
             console.log(tryNotify.error)
           }
 
-          return resultOutput.resultOutputDataOk(tryNotify)
+          return resultOutput.resultOutputSuccess('O seu orçamento foi submetido com sucesso. Obrigado pela sua preferência.')
+
         } else if (docs.budgetType && docs.budgetType === BUDGET_CALLBACK) {
           subject = 'Pedido de Contacto - [[name]]'.replace('[[name]]', docs.budgetName)
           bodymail = '<h2>{{subtitle}}</h2>'.replace('{{subtitle}}', subject)
@@ -256,7 +386,7 @@ async function budgetsRequest (context) {
           bodymail += '</ul>'
 
           emaildata = {
-            to: 'geral@expressclean.pt',
+            to: 'geral@safeclean.pt',
             subject: subject,
             html: bodymail
           }
@@ -269,7 +399,7 @@ async function budgetsRequest (context) {
           }
         } else if (docs.budgetType && docs.budgetType === BUDGET_SUPPORT) {
           emaildata = {
-            to: 'geral@expressclean.pt',
+            to: 'geral@safeclean.pt',
             subject: subject,
             html: bodymail
           }
