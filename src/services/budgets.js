@@ -67,6 +67,11 @@ const inputfields = Object.freeze({
       required: [BUDGET_FORM]
     },
     budgetPortNumber: {
+      name: 'budgetAndar',
+      label: 'Andar',
+      required: [BUDGET_FORM]
+    },
+    budgetPortNumber: {
       name: 'budgetPortNumber',
       label: 'Nº Porta',
       required: [BUDGET_FORM]
