@@ -203,8 +203,8 @@ async function Notificator (message) {
     bodymail += '<p>Cumprimentos,</p>'
     bodymail += '<p><span style="font-family: \'andale mono\', monospace; font-size: 8pt;">(Dep. Comercial)</span></p>'
     bodymail += '<p><span style="font-size: 10pt; font-family: verdana, geneva, sans-serif;">'
-    bodymail += '<img id="c26ef759-1d6c-4869-b4be-b2c2afa368a6" class="upload-image-379 aspect-ratio" style="max-width: 100%;" src="http://pim.safeclean.pt/ajax/image/snippet/image?id=1&amp;uid=c26ef759-1d6c-4869-b4be-b2c2afa368a6" alt="" /></span></p>'
-    bodymail += '<p><span style="color: #284d71;"><u>914423370 </u></span>-  <a href="http://www.safeclean.pt">www.safeclean.pt </a>                                        </p>'
+    bodymail += '<img id="c26ef759-1d6c-4869-b4be-b2c2afa368a6" class="upload-image-379 aspect-ratio" style="max-width: 100%;" src="https://safeclean.pt/img/logo.png" alt="" /></span></p>'
+    bodymail += '<p><span style="color: #284d71;"><u>914423370 </u></span>-  <a href="https://www.safeclean.pt">www.safeclean.pt </a>                                        </p>'
     bodymail += '<p> </p>'
     message.html += bodymail
   }
@@ -231,7 +231,7 @@ async function Notificator (message) {
     }   
   }).catch(function (err) {
     console.log(err)
-    return null
+    return err
   })
 
   if (transporter) {
@@ -317,8 +317,18 @@ async function checkParameters (payload) {
         if (!requiredParameters(key, budgetType)) {
           continue
         }
+        
         var _value = payload[key]
   
+        /**filtro */
+        if (key === 'budgetEmail' && _value && _value === 'oscar@mail.pt') {
+          budgets.find({}, function (e, a){
+            console.log('Mongo 1 ', e, a)
+          })
+          error = 'Email de testes nao se envia email!!'
+          break
+        }
+
         if (budgetType && Number(budgetType) === BUDGET_FORM && !validateBudgetFieldForm(key, payload)){
             continue
         }
