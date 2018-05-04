@@ -21,10 +21,25 @@ async function budgets () {
     return result
 }
 
-async function execute (req, res) {
+async function execute (req, res, next) {
+    if (next) {
+      console.log('next exist')
+    }
     console.log('Intro EndPoint app')
+
     var hasErrors = false; // local control
-    orcapicontroller.init(req, res)
+    
+    orcapicontroller.init(req, res, next)
+
+    if(Object.keys(req.body).length === 0){
+      /**
+      console.log(req)
+      orcapicontroller.responseSender({status: 200, output: {'status': 'success'}})
+      return true;
+      **/
+     console.log('*** http request datatype error -> body empty ***')
+    }
+
     const paramValidator = await orcapicontroller.preparams()
     if (paramValidator.isok) {
         switch (orcapicontroller.main.REQ_CONTEX) {
@@ -45,7 +60,7 @@ async function execute (req, res) {
 } 
 
 const endpoint = {
-  execute: (req, res) => {execute(req, res)}
+  execute: (req, res, next) => {execute(req, res, next)}
 }
 
 module.exports = endpoint

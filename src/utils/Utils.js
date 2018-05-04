@@ -1,3 +1,4 @@
+const requestIp = require('request-ip')
 function resultOutput (iook, success, error, data) {
   return {
     iook: iook,
@@ -31,6 +32,15 @@ function tokenVerify (token) {
   return false
 }
 
+// inside middleware handler 
+const ipMiddleware = function(req, res, next) {
+  const clientIp = requestIp.getClientIp(req); 
+  //next();
+};
+
+// on localhost you'll see 127.0.0.1 if you're using IPv4  
+// or ::1, ::ffff:127.0.0.1 if you're using IPv6 
+
 const INSTANCE = {
   resultOutput: {
     resultOutputSuccess: (success) => { return resultOutput(true, success, null, null) },
@@ -41,6 +51,9 @@ const INSTANCE = {
   jwtToken: {
     tokenVerify: token => { return tokenVerify(token) },
     tokenRequestVerify: httpRequest => { return tokenRequestVerify(httpRequest) }
+  },
+  ipMiddleware: {
+    getClientIp: ipMiddleware
   }
 }
 module.exports = INSTANCE

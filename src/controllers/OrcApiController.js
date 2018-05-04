@@ -7,13 +7,15 @@ const ERROR_MISSING_REQ_PAR_05 = 'Error [Http] [missing httpResponse]'
 const main = this
 main['httpRequest'] = null
 main['httpResponse'] = null
+main['next'] = null
 main['REQ_CONTEX'] = 0
 main['REQ_ACTION'] = 0
 main['REQ_INPUTS'] = {}
 
-function init (req, res) {
+function init (req, res, next) {
   main.httpRequest = req
   main.httpResponse = res
+  main.next = next
   return main
 }
 
@@ -46,7 +48,7 @@ async function responseSender (result) {
 }
 
 const instance = {
-  init: (req, res) => {return init(req, res)},
+  init: (req, res, next) => {return init(req, res, next)},
   main: main,
   preparams: preparams,
   responseSender: (result) => {return responseSender(result)}
