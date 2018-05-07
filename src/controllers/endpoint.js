@@ -45,7 +45,33 @@ async function execute (req, res, next) {
         switch (orcapicontroller.main.REQ_CONTEX) {
             case apiPolicy.services.root:
               await budgets()
-              break;        
+              break;
+            case 9999:
+            if(orcapicontroller.main.REQ_INPUTS.hasOwnProperty('origin') && orcapicontroller.main.REQ_INPUTS.origin === 'w2ui') {
+              console.info('Mode: ' + orcapicontroller.main.REQ_INPUTS.origin)
+              console.log(orcapicontroller.main.httpRequest.body)
+              const out = {}
+              if(orcapicontroller.main.httpRequest.body.cmd === 'save') {
+                const w2ui = require('../services/w2ui')
+                const data = await w2ui.login(orcapicontroller.main.httpRequest.body.record)
+                console.log(data)               
+                if(data.status === 200){
+                  out['status'] = 'success'
+                  out['dataresponse'] = data
+                } else if(data.status === 403){
+                  out['status'] = 'error'
+                  out['message'] = data.output.error
+                }
+              } else {
+                out['status'] = 'success'
+                out['record'] = {email: 'exemplo@exemplo.com'}
+              }
+              
+              orcapicontroller.responseSender({status: 200, output: out})
+            } else {
+              hasErrors = true
+            }              
+            break;
             default:
               hasErrors = true
               break;
