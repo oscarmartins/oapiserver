@@ -60,7 +60,7 @@ const inputfields = Object.freeze({
     budgetMobile: {
       name: 'budgetMobile',
       label: 'Contacto ',
-      required: [BUDGET_CALLBACK, BUDGET_FORM, BUDGET_SUPPORT]
+      required: [BUDGET_CALLBACK, BUDGET_FORM]
     },
     budgetStreet: {
       name: 'budgetStreet',
@@ -311,7 +311,10 @@ async function checkParameters (payload) {
     error = 'Error parameter {{key}} required!'.replace('{{key}}', budgetType ? 'budgetSeviceType' : 'budgetType')
   } else {
     for (var key in inputfields) {
-      if (!budgetType || !payload.hasOwnProperty(key)) {
+
+      const testParam = ( Number(budgetType) !== BUDGET_CALLBACK && Number(budgetType) !== BUDGET_SUPPORT && !payload.hasOwnProperty(key))
+      
+      if (!budgetType || testParam) {
         error = 'Error parameter {{key}} not exist!'.replace('{{key}}', key)
         break
       } else {        
@@ -395,12 +398,38 @@ async function budgetsRequest (context) {
         } else if (docs.budgetType && docs.budgetType === BUDGET_CALLBACK) {
           subject = 'Pedido de Contacto - [[name]]'.replace('[[name]]', docs.budgetName)
           bodymail = '<h2>{{subtitle}}</h2>'.replace('{{subtitle}}', subject)
-
+          bodymail += '<p>O cliente pediu para ser contatado nas proximas horas.</p>'
           bodymail += '<ul>'
-          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetName')).replace('[[value]]', serviceType(docs[key]))
-          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetMobile')).replace('[[value]]', serviceType(docs[key]))
+          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetName')).replace('[[value]]', serviceType(docs['budgetName']))
+          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetMobile')).replace('[[value]]', serviceType(docs['budgetMobile']))
+          bodymail += '</ul>'
+          
+
+          emaildata = {
+            to: 'geral@safeclean.pt',
+            subject: subject,
+            html: bodymail
+          }
+
+          tryNotify = await Notificator(emaildata)
+          if (tryNotify && tryNotify.iook) {
+            console.log('email sent to {{email}} :)'.replace('{{email}}', emaildata.to))
+          } else {
+            console.log(tryNotify.error)
+          }
+          return resultOutput.resultOutputSuccess('O seu Pedido de Contacto foi submetido e registado com sucesso. Entraremos em contacto consigo o mais brevemente possível. Obrigado pela sua preferência.')
+        } else if (docs.budgetType && docs.budgetType === BUDGET_SUPPORT) {
+
+          subject = 'Pedido de Suporte - [[name]]'.replace('[[name]]', docs.budgetName)
+          bodymail = '<h2>{{subtitle}}</h2>'.replace('{{subtitle}}', subject)
+          bodymail += '<p>Pedido Suporte </p>'
+          bodymail += '<ul>'
+          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetName')).replace('[[value]]', serviceType(docs['budgetName']))
+          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetEmail')).replace('[[value]]', serviceType(docs['budgetEmail']))
+          bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetObserva')).replace('[[value]]', serviceType(docs['budgetObserva']))
           bodymail += '</ul>'
 
+
           emaildata = {
             to: 'geral@safeclean.pt',
             subject: subject,
@@ -413,19 +442,7 @@ async function budgetsRequest (context) {
           } else {
             console.log(tryNotify.error)
           }
-        } else if (docs.budgetType && docs.budgetType === BUDGET_SUPPORT) {
-          emaildata = {
-            to: 'geral@safeclean.pt',
-            subject: subject,
-            html: bodymail
-          }
-
-          tryNotify = await Notificator(emaildata)
-          if (tryNotify && tryNotify.iook) {
-            console.log('email sent to {{email}} :)'.replace('{{email}}', docs.budgetEmail))
-          } else {
-            console.log(tryNotify.error)
-          }
+          return resultOutput.resultOutputSuccess('O seu Pedido de Suporte foi submetido e registado com sucesso. Entraremos em contacto consigo o mais brevemente possível. Obrigado pela sua preferência.')
         }
         return resultOutput.resultOutputError('Error budgetType unknown error')
       }).catch(function (err, doc) {
