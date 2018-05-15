@@ -1,6 +1,6 @@
 const rp = require('request-promise')
 var splitter = require('split-sms')
-
+const smsauth = require('/opt/orccontext')['sms_provider']
 function statusDescription (code) {
   let statusText = ''
   switch (code) {
@@ -58,6 +58,10 @@ module.exports = class BulkSMS {
     }
     this.user = user
     this.pass = pass
+  }
+  useProviderAuth () {
+    this.user = smsauth.username
+    this.pass = smsauth.password
   }
   async sendTextMessage (msisdn, message) {
     const validateMessage = splitter.split(message)

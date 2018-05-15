@@ -1,4 +1,13 @@
+/**
+ * db.budgets.find({
+ * dateCreated: { "$gte" : ISODate("2018-05-14T00:00:00Z"), "$lt" : ISODate("2018-05-14T19:00:00Z") }, 
+ * budgetType: 20 }).pretty()
+ * 
+ * **/
+
+
 const nodemailer = require('nodemailer')
+const BulkSMS = require('../utils/BulkSMS')
 const resultOutput = require('../utils/Utils')['resultOutput']
 const getClientIp = require('../utils/Utils')['ipMiddleware']['getClientIp']
 const {budgets} = require('../models')
@@ -274,7 +283,6 @@ function validateBudgetFieldForm(key, payload) {
         showFieldsGroup.push(INPUT_FIELDS[8])
         showFieldsGroup.push(INPUT_FIELDS[9])
         showFieldsGroup.push(INPUT_FIELDS[6])
-        //showFieldsGroup.push(INPUT_FIELDS[10]);
         break;
       case LIMPCONDOMINIOS:
         showFieldsGroup.push(INPUT_FIELDS[6])
@@ -298,13 +306,12 @@ function validateBudgetFieldForm(key, payload) {
         return
       }
     })
-   
   }
 
   return validateField
 }
 
-async function checkParameters (payload) {
+async function checkParameters(payload) {
   const budgetType = payload['budgetType'] || false
   var iook = true, success = 'input fields valid', error = null
   if (budgetType && budgetType === BUDGET_FORM && !payload['budgetSeviceType']) {
@@ -312,42 +319,47 @@ async function checkParameters (payload) {
   } else {
     for (var key in inputfields) {
 
-      const testParam = ( Number(budgetType) !== BUDGET_CALLBACK && Number(budgetType) !== BUDGET_SUPPORT && !payload.hasOwnProperty(key))
-      
+      const testParam = (Number(budgetType) !== BUDGET_CALLBACK && 
+                        Number(budgetType) !== BUDGET_SUPPORT && 
+                        !payload.hasOwnProperty(key))
+
       if (!budgetType || testParam) {
         error = 'Error parameter {{key}} not exist!'.replace('{{key}}', key)
         break
-      } else {        
+      } else {
         if (!requiredParameters(key, budgetType)) {
           continue
         }
-        
+
         var _value = payload[key]
-  
+
         /**filtro */
         if (key === 'budgetEmail' && _value && _value === 'oscar@mail.pt') {
-          budgets.find({}, function (e, a){
+          budgets.find({}, function (e, a) {
             console.log('Mongo 1 ', e, a)
           })
           error = 'Email de testes nao se envia email!!'
+
+          local.SMSNotificator({username: '', password: '', mobileTo: '', msgTo: ''})
+
           break
         }
 
-        if (budgetType && Number(budgetType) === BUDGET_FORM && !validateBudgetFieldForm(key, payload)){
-            continue
+        if (budgetType && Number(budgetType) === BUDGET_FORM && !validateBudgetFieldForm(key, payload)) {
+          continue
         }
 
-        if (typeof _value === "undefined" || _value.length <= 0){
+        if (typeof _value === "undefined" || _value.length <= 0) {
           error = 'Deve indicar um valor para {{key}}.'.replace('{{key}}', labelHelper(key))
           break
         }
-      }   
+      }
     }
   }
-  
+
   if (error) {
     return resultOutput.resultOutputError(error)
-  }  
+  }
   return resultOutput.resultOutputSuccess(success)
 }
 
@@ -403,7 +415,6 @@ async function budgetsRequest (context) {
           bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetName')).replace('[[value]]', serviceType(docs['budgetName']))
           bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetMobile')).replace('[[value]]', serviceType(docs['budgetMobile']))
           bodymail += '</ul>'
-          
 
           emaildata = {
             to: 'geral@safeclean.pt',
@@ -414,6 +425,7 @@ async function budgetsRequest (context) {
           tryNotify = await Notificator(emaildata)
           if (tryNotify && tryNotify.iook) {
             console.log('email sent to {{email}} :)'.replace('{{email}}', emaildata.to))
+            //local.SMSNotificator
           } else {
             console.log(tryNotify.error)
           }
@@ -428,7 +440,6 @@ async function budgetsRequest (context) {
           bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetEmail')).replace('[[value]]', serviceType(docs['budgetEmail']))
           bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetObserva')).replace('[[value]]', serviceType(docs['budgetObserva']))
           bodymail += '</ul>'
-
 
           emaildata = {
             to: 'geral@safeclean.pt',
@@ -472,7 +483,28 @@ const local = {
     console.log(getClientIp(context.main.httpRequest, context.main.httpResponse, context.main.next))
     const br = await budgetsRequest(context)
     return br
+  },
+  /** 
+   * object param {
+   * username: '',
+   * password: '',
+   * mobileTo: '+3519xxxxxxxx',
+   * msgTo: ''
+   * }
+  */
+  SMSNotificator: async function (param) {
+    let smsResponse = null
+    try {
+      const sms = new BulkSMS(param.username, param.password)
+      if (!param.username || !param.password) {
+        sms.useProviderAuth()
+      }
+      smsResponse = await sms.sendTextMessage(param.mobileTo, param.msgTo)
+    } catch (error) {
+      console.log('SMSNotificator Error --> ', error)
     }
+    return smsResponse
+  }
 }
 
 module.exports = local
