@@ -335,13 +335,17 @@ async function checkParameters(payload) {
 
         /**filtro */
         if (key === 'budgetEmail' && _value && _value === 'oscar@mail.pt') {
+          /**
           budgets.find({}, function (e, a) {
             console.log('Mongo 1 ', e, a)
           })
+           */
           error = 'Email de testes nao se envia email!!'
 
-          local.SMSNotificator({username: '', password: '', mobileTo: '', msgTo: ''})
-
+          var smsbody = 'SAFECLEAN O cliente [[name]] pretende ser contactado. [[mobile]].'.replace('[[name]]', 'Oscar Martins').replace('[[mobile]]', '913859014') 
+          console.log(smsbody)
+          //const smstest = await local.SMSNotificator({mobileTo: '+351913859014', msgTo: smsbody})
+          //console.log('logger sms: ', smstest)
           break
         }
 
@@ -424,8 +428,9 @@ async function budgetsRequest (context) {
 
           tryNotify = await Notificator(emaildata)
           if (tryNotify && tryNotify.iook) {
-            console.log('email sent to {{email}} :)'.replace('{{email}}', emaildata.to))
-            //local.SMSNotificator
+            console.log('email sent to {{email}} :)'.replace('{{email}}', emaildata.to))       
+            var smsbody = 'SAFECLEAN O cliente [[name]] pretende ser contactado. [[mobile]].'.replace('[[name]]',  docs['budgetName']).replace('[[mobile]]', docs['budgetMobile']) 
+            const smstest = await local.SMSNotificator({mobileTo: '+351916665011', msgTo: smsbody})
           } else {
             console.log(tryNotify.error)
           }

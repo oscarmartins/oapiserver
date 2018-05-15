@@ -62,6 +62,7 @@ module.exports = class BulkSMS {
   useProviderAuth () {
     this.user = smsauth.username
     this.pass = smsauth.password
+    console.log('BulkSMS --> useProviderAuth = true')
   }
   async sendTextMessage (msisdn, message) {
     const validateMessage = splitter.split(message)
