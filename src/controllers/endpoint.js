@@ -1,5 +1,6 @@
 const orcapicontroller = require('./OrcApiController')
 const apiPolicy = require('../policies/ApiPolicy')
+const jwtToken = require('../utils/Utils')['jwtToken']
 const _budgets = require('../services/budgets')
 
 function resolveError (paramErr) {
@@ -53,6 +54,9 @@ async function execute (req, res, next) {
                   const w2ui = require('../services/w2ui')
                   const outresp = {}
 
+                  console.log('headers: ', orcapicontroller.main.httpRequest.headers)
+                  console.log('tokenRequestVerify --> ', jwtToken.tokenRequestVerify(orcapicontroller.main.httpRequest))
+
                   /**
                   let w2uiRespData = null
                   const w2uiRecord = orcapicontroller.main.httpRequest.body.record
@@ -85,14 +89,13 @@ async function execute (req, res, next) {
                       case 1000:
                       w2uiRespData = await w2ui.login(w2uiRecord)
                         break;
-                      case 2000:
+                      case 2000:                      
                       w2uiRespData = await w2ui.register(w2uiRecord)
                         break;
                       default:
                         break;
                     }
-
-                    console.log(w2uiRespData)               
+             
                     if(w2uiRespData.status === 200){
                       outresp['status'] = 'success'
                       outresp['dataresponse'] = w2uiRespData
@@ -113,7 +116,6 @@ async function execute (req, res, next) {
                   } else {
                     if (orcapicontroller.main.httpRequest.body.cmd) {
                       const w2uicmd = orcapicontroller.main.httpRequest.body.cmd
-                      console.log(w2uicmd)
                       if (w2uicmd === 'get') {
                         Object.assign(outresp, resolveW2uiResponses())
                       } else {
