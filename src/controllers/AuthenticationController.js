@@ -47,7 +47,6 @@ async function _signup (payload) {
           }
         }
       } else {
-        console.log('register fail')
         return {
           status: 400,
           output: {error: 'error register fail.'}

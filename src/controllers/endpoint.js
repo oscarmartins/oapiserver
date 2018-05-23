@@ -41,37 +41,92 @@ async function execute (req, res, next) {
     }
 
     const paramValidator = await orcapicontroller.preparams()
+    console.log('PARAMVALIDATOR: ', paramValidator)
     if (paramValidator.isok) {
         switch (orcapicontroller.main.REQ_CONTEX) {
             case apiPolicy.services.root:
               await budgets()
               break;
             case 9999:
-            if(orcapicontroller.main.REQ_INPUTS.hasOwnProperty('origin') && orcapicontroller.main.REQ_INPUTS.origin === 'w2ui') {
-              console.info('Mode: ' + orcapicontroller.main.REQ_INPUTS.origin)
-              console.log(orcapicontroller.main.httpRequest.body)
-              const out = {}
-              if(orcapicontroller.main.httpRequest.body.cmd === 'save') {
-                const w2ui = require('../services/w2ui')
-                const data = await w2ui.login(orcapicontroller.main.httpRequest.body.record)
-                console.log(data)               
-                if(data.status === 200){
-                  out['status'] = 'success'
-                  out['dataresponse'] = data
-                } else if(data.status === 403){
-                  out['status'] = 'error'
-                  out['message'] = data.output.error
-                }
+              if(orcapicontroller.main.REQ_INPUTS.hasOwnProperty('origin') && 
+                orcapicontroller.main.REQ_INPUTS.origin === 'w2ui') {
+                  const w2ui = require('../services/w2ui')
+                  const outresp = {}
+
+                  /**
+                  let w2uiRespData = null
+                  const w2uiRecord = orcapicontroller.main.httpRequest.body.record
+
+                  let w2cmd = orcapicontroller.main.httpRequest.body.cmd
+
+                  switch (orcapicontroller.main.REQ_ACTION) {
+                      case 1000:
+                      if (w2cmd === w2ui.SAVE) {
+                        w2uiRespData = await w2ui.login(w2uiRecord)
+                      } else { 
+                        outresp['status'] = 'success'
+                        outresp['record'] = w2cmd === w2ui.GET ? {email: 'exemplo@exemplo.com'} : {}
+                      }
+                        break;
+                      case 2000:
+                      w2uiRespData = await w2ui.register(w2uiRecord)
+                        break;
+                      default:
+                        break;
+                    }
+
+                   **/
+
+
+                  if(orcapicontroller.main.httpRequest.body.cmd === 'save') {
+                    let w2uiRespData = null
+                    const w2uiRecord = orcapicontroller.main.httpRequest.body.record
+                    switch (orcapicontroller.main.REQ_ACTION) {
+                      case 1000:
+                      w2uiRespData = await w2ui.login(w2uiRecord)
+                        break;
+                      case 2000:
+                      w2uiRespData = await w2ui.register(w2uiRecord)
+                        break;
+                      default:
+                        break;
+                    }
+
+                    console.log(w2uiRespData)               
+                    if(w2uiRespData.status === 200){
+                      outresp['status'] = 'success'
+                      outresp['dataresponse'] = w2uiRespData
+                    } else {
+                      let message = 'found error '
+                      switch (w2uiRespData.status) {
+                        case 400:
+                        case 403:
+                          message = w2uiRespData.output.error
+                          break;
+                        default:
+                          break;
+                      }
+
+                      outresp['status'] = 'error'
+                      outresp['message'] = message
+                    }
+                  } else {
+                    if (orcapicontroller.main.httpRequest.body.cmd) {
+                      const w2uicmd = orcapicontroller.main.httpRequest.body.cmd
+                      console.log(w2uicmd)
+                      if (w2uicmd === 'get') {
+                        Object.assign(outresp, resolveW2uiResponses())
+                      } else {
+                        outresp['status'] = 'success'
+                        outresp['record'] = {/**clear**/}
+                      }
+                    }
+                  }
+                orcapicontroller.responseSender({status: 200, output: outresp})
               } else {
-                out['status'] = 'success'
-                out['record'] = {email: 'exemplo@exemplo.com'}
-              }
-              
-              orcapicontroller.responseSender({status: 200, output: out})
-            } else {
-              hasErrors = true
-            }              
-            break;
+                hasErrors = true
+              }              
+              break;
             default:
               hasErrors = true
               break;
@@ -84,6 +139,25 @@ async function execute (req, res, next) {
     }
     return true
 } 
+
+function resolveW2uiResponses () {
+  var outresp = {}
+  switch (orcapicontroller.main.REQ_ACTION) {
+    case 1000:
+      outresp['status'] = 'success'
+      outresp['record'] = {email: 'exemplo@exemplo.com'}
+      break;
+    case 2000:
+      outresp['status'] = 'success'
+      outresp['record'] = {name: 'exemplo', email: 'exemplo@exemplo.com'}
+      break;
+    default:
+      outresp['status'] = 'success'
+      outresp['record'] = {}
+      break;
+  }
+  return outresp
+}
 
 const endpoint = {
   execute: (req, res, next) => {execute(req, res, next)}
