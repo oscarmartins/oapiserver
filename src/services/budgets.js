@@ -313,12 +313,7 @@ async function checkParameters(payload) {
   const budgetRgpd = payload['budgetRgpd'] || false
   const budgetType = payload['budgetType'] || false
   var iook = true, success = 'input fields valid', error = null
-
-  if (!budgetRgpd) {
-    error = 'Para concluir, deve aceitar a Política de Privacidade e Tratamento de Dados Pessoais SAFECLEAN.'
-    return resultOutput.resultOutputError(error)
-  } 
-
+ 
   if (budgetType && budgetType === BUDGET_FORM && !payload['budgetSeviceType']) {
     error = 'Error parameter {{key}} required!'.replace('{{key}}', budgetType ? 'budgetSeviceType' : 'budgetType')
   } else {
@@ -375,7 +370,10 @@ async function checkParameters(payload) {
     }
   }
 
-  if (error) {
+  if (error || !budgetRgpd) {
+    if (!budgetRgpd) {
+      error = 'Para concluir, deve aceitar a Política de Privacidade e Tratamento de Dados Pessoais SAFECLEAN.'
+    }
     return resultOutput.resultOutputError(error)
   }
   return resultOutput.resultOutputSuccess(success)
