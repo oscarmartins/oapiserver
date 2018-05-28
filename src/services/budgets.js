@@ -328,14 +328,6 @@ async function checkParameters(payload) {
         break
       } else {
 
-        if(budgetRgpd !== budgetType) {
-          console.log('***** ERROR **0** ')
-          error = 'Ocorreu um erro nos parametros. Não foi possivel aceitar o seu pedido. Tente mais tarde ou entre em contato. Obrgado.'
-          console.log(error, payload)
-          console.log('***** ERROR **1** ')
-          break
-        }
-
         if (!requiredParameters(key, budgetType)) {
           continue
         }
@@ -369,11 +361,17 @@ async function checkParameters(payload) {
       }
     }
   }
-
+  
   if (error) {
     return resultOutput.resultOutputError(error)
   } else if (!budgetRgpd) {
     error = 'Para concluir, deve aceitar a Política de Privacidade e Tratamento de Dados Pessoais SAFECLEAN.'
+    return resultOutput.resultOutputError(error)
+  } else if(budgetRgpd !== budgetType) {
+    console.log('***** ERROR **0** ')
+    error = 'Ocorreu um erro nos parametros. Não foi possivel aceitar o seu pedido. Tente mais tarde ou entre em contato. Obrgado.'
+    console.log(error, payload)
+    console.log('***** ERROR **1** ')
     return resultOutput.resultOutputError(error)
   }
   return resultOutput.resultOutputSuccess(success)
