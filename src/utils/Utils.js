@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken')
+const config = require('../config/config')
 const requestIp = require('request-ip')
 function resultOutput (iook, success, error, data) {
   return {
@@ -7,12 +9,13 @@ function resultOutput (iook, success, error, data) {
     data: data || null
   }
 }
-
+/**
 function tokenRequestVerify (httpRequest) {
   const authorization = httpRequest.headers.authorization
   return tokenVerify(authorization && authorization.split(' ')[0] === 'Bearer' ? authorization.split(' ')[1] : null)
 }
-
+ */
+/**
 function tokenVerify (token) {
   if (token) { // Token is present
     if (token.split('.').length === 3) { // Token with a valid JWT format XXX.YYY.ZZZ
@@ -24,12 +27,35 @@ function tokenVerify (token) {
           return Math.round(new Date().getTime() / 1000) < exp
         }
       } catch (e) {
-        return true // Pass: Non-JWT token that looks like JWT
+        return false // Pass: Non-JWT token that looks like JWT
       }
     }
     return true // Pass: All other tokens
   }
   return false
+}
+ */
+function tokenRequestVerify (httpRequest) {
+  return tokenVerify(httpRequest.headers.authorization)
+}
+function tokenVerify (token) {
+  let tokenIOOK = false
+  let testStr = null
+  try {
+    testStr = token.trim().replace('Bearer', '').trim()
+    tokenIOOK = jwt.verify(testStr, config.authentication.jwtSecret, function (err, decoded) {
+      if (err) {
+        throw err
+      }
+      return decoded
+    })
+  } catch (error) {
+    if (error) {
+      console.log(error.message)
+    }
+    tokenIOOK = false
+  }
+  return tokenIOOK
 }
 
 // inside middleware handler 

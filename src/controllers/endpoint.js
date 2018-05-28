@@ -1,6 +1,6 @@
 const orcapicontroller = require('./OrcApiController')
 const apiPolicy = require('../policies/ApiPolicy')
-const jwtToken = require('../utils/Utils')['jwtToken']
+const jwtoken = require('../utils/Utils')['jwtToken']
 const _budgets = require('../services/budgets')
 
 function resolveError (paramErr) {
@@ -53,9 +53,13 @@ async function execute (req, res, next) {
                 orcapicontroller.main.REQ_INPUTS.origin === 'w2ui') {
                   const w2ui = require('../services/w2ui')
                   const outresp = {}
-
-                  console.log('headers: ', orcapicontroller.main.httpRequest.headers)
-                  console.log('tokenRequestVerify --> ', jwtToken.tokenRequestVerify(orcapicontroller.main.httpRequest))
+                  
+                  const authorization = jwtoken.tokenRequestVerify(orcapicontroller.main.httpRequest)
+                  if(authorization) {
+                    console.log('token authorization', authorization)
+                  } else {
+                    console.log('no authorization')
+                  }
 
                   /**
                   let w2uiRespData = null

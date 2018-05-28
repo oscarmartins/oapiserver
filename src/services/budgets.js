@@ -212,10 +212,8 @@ async function Notificator (message) {
     var bodymail = '<p>---</p>'
     bodymail += '<p>Cumprimentos,</p>'
     bodymail += '<p><span style="font-family: \'andale mono\', monospace; font-size: 8pt;">(Dep. Comercial)</span></p>'
-    bodymail += '<p><span style="font-size: 10pt; font-family: verdana, geneva, sans-serif;">'
-    bodymail += '<img id="c26ef759-1d6c-4869-b4be-b2c2afa368a6" class="upload-image-379 aspect-ratio" style="max-width: 100%;" src="https://safeclean.pt/img/logo.png" alt="" /></span></p>'
-    bodymail += '<p><span style="color: #284d71;"><u>914423370 </u></span>-  <a href="https://www.safeclean.pt">www.safeclean.pt </a>                                        </p>'
-    bodymail += '<p> </p>'
+    bodymail += '<p><span style="font-size: 10pt; font-family: verdana, geneva, sans-serif;"> <img id="c26ef759-1d6c-4869-b4be-b2c2afa368a6" class="upload-image-379 aspect-ratio" style="max-width: 100%; width: 200px;" src="https://safeclean.pt/img/logo.png" alt="" /></span></p>'
+    bodymail += '<p><span style="color: #3366ff;"><em><span style="font-size: 8pt;"><span style="font-size: 10pt;"> <a style="color: #3366ff;">215860560</a></span>  |</span><span style="font-size: 10pt;"> <a style="color: #3366ff;">916665011</a> </span></em></span> <br /><span style="color: #99cc00;"><em> <a style="color: #99cc00;" href="https://www.safeclean.pt">www.safeclean.pt </a> | <a style="color: #99cc00;" href="https://www.facebook.com/safeclean.pt/">Safeclean no facebook</a> </em></span> <br /><br /><span style="font-size: 8pt;"> <strong>Sede</strong></span> <br /><span style="font-size: 8pt;">Largo da Lagoa, 15 J sala A </span> <br /><span style="font-size: 8pt;">2795-116</span> <br /><span style="font-size: 8pt;">Linda-a-Velha</span> <br /><br /><span style="font-size: 8pt;"> <strong>Filial</strong></span> <br /><span style="font-size: 8pt;">Centro de Escritórios Jomavipe Business Center</span> <br /><span style="font-size: 8pt;">Rua Cesaltina Fialho Gouveia, 703</span> <br /><span style="font-size: 8pt;">2645-038</span> <br /><span style="font-size: 8pt;">Cascais</span></p>'
     message.html += bodymail
   }
 
@@ -312,8 +310,15 @@ function validateBudgetFieldForm(key, payload) {
 }
 
 async function checkParameters(payload) {
+  const budgetRgpd = payload['budgetRgpd'] || false
   const budgetType = payload['budgetType'] || false
   var iook = true, success = 'input fields valid', error = null
+
+  if (!budgetRgpd) {
+    error = 'Para concluir, deve aceitar a Política de Privacidade e Tratamento de Dados Pessoais SAFECLEAN.'
+    return resultOutput.resultOutputError(error)
+  } 
+
   if (budgetType && budgetType === BUDGET_FORM && !payload['budgetSeviceType']) {
     error = 'Error parameter {{key}} required!'.replace('{{key}}', budgetType ? 'budgetSeviceType' : 'budgetType')
   } else {
@@ -327,6 +332,15 @@ async function checkParameters(payload) {
         error = 'Error parameter {{key}} not exist!'.replace('{{key}}', key)
         break
       } else {
+
+        if(budgetRgpd !== budgetType) {
+          console.log('***** ERROR **0** ')
+          error = 'Ocorreu um erro nos parametros. Não foi possivel aceitar o seu pedido. Tente mais tarde ou entre em contato. Obrgado.'
+          console.log(error, payload)
+          console.log('***** ERROR **1** ')
+          break
+        }
+
         if (!requiredParameters(key, budgetType)) {
           continue
         }
@@ -334,7 +348,7 @@ async function checkParameters(payload) {
         var _value = payload[key]
 
         /**filtro */
-        if (key === 'budgetEmail' && _value && _value === 'oscar@mail.pt') {
+        if ((key === 'budgetEmail' || key === 'budgetName') && _value && _value === 'oscar@mail.pt') {
           /**
           budgets.find({}, function (e, a) {
             console.log('Mongo 1 ', e, a)
@@ -385,7 +399,6 @@ async function budgetsRequest (context) {
         if (docs.budgetType && docs.budgetType === BUDGET_FORM) {
           subject = 'Pedido de Orçamento - [[name]], [[street]]'.replace('[[name]]', docs.budgetName).replace('[[street]]', docs.budgetCity)
           bodymail = '<h2>{{subtitle}}</h2>'.replace('{{subtitle}}', subject)
-          bodymail += '<p>id: {{orcid}}</p>'.replace('{{orcid}}',  docs._id)
           bodymail += '<ul>'
           for (var key in inputfields) {
             if (docs.hasOwnProperty(key) || docs[key]) {
@@ -395,7 +408,8 @@ async function budgetsRequest (context) {
             }
           }
           bodymail += '</ul>'
-
+          bodymail += '<p>id: {{orcid}}</p>'.replace('{{orcid}}',  docs._id)
+          bodymail += '<p>Data: {{date}}</p>'.replace('{{date}}', new Date)
           emaildata = {
             to: 'geral@safeclean.pt',
             subject: subject,
