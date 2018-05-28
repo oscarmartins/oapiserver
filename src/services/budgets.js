@@ -370,10 +370,10 @@ async function checkParameters(payload) {
     }
   }
 
-  if (error || !budgetRgpd) {
-    if (!budgetRgpd) {
-      error = 'Para concluir, deve aceitar a Política de Privacidade e Tratamento de Dados Pessoais SAFECLEAN.'
-    }
+  if (error) {
+    return resultOutput.resultOutputError(error)
+  } else if (!budgetRgpd) {
+    error = 'Para concluir, deve aceitar a Política de Privacidade e Tratamento de Dados Pessoais SAFECLEAN.'
     return resultOutput.resultOutputError(error)
   }
   return resultOutput.resultOutputSuccess(success)
