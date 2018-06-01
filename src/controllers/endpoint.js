@@ -90,10 +90,10 @@ async function execute (req, res, next) {
                     let w2uiRespData = null
                     const w2uiRecord = orcapicontroller.main.httpRequest.body.record
                     switch (orcapicontroller.main.REQ_ACTION) {
-                      case 1000:
+                      case w2ui.options.SIGNIN:
                       w2uiRespData = await w2ui.login(w2uiRecord)
                         break;
-                      case 2000:                      
+                      case w2ui.options.SIGNUP:                      
                       w2uiRespData = await w2ui.register(w2uiRecord)
                         break;
                       default:

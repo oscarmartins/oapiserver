@@ -2,6 +2,7 @@ const auth = require('../controllers/AuthenticationController')
 const AccountPolicy = require('../policies/AccountPolicy')
 
 const instance = {
+    options:auth.options,
     login: auth.signin,
     register: async function (w2records) {
         const vres = AccountPolicy.validateSignInAndUp(w2records)
