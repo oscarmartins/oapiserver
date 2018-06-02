@@ -49,8 +49,8 @@ async function execute (req, res, next) {
               await budgets()
               break;
             case 9999:
-              if(orcapicontroller.main.REQ_INPUTS.hasOwnProperty('origin') && 
-                orcapicontroller.main.REQ_INPUTS.origin === 'w2ui') {
+              const serverContext = orcapicontroller.main.httpRequest.headers.hasOwnProperty('serverContext') ? orcapicontroller.main.httpRequest.headers.hasOwnProperty('serverContext') : 'unknown'
+              if(serverContext === 'w2ui') {
                   const w2ui = require('../services/w2ui')
                   const outresp = {}
                   
