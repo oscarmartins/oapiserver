@@ -390,9 +390,11 @@ async function budgetsRequest (context) {
       budgetDoc.dateCreated = Date.now()
       budgetDoc.dateUpdated = Date.now()      
       const saveBudget = await budgetDoc.save(true).then(async function (docs) {
+        
         var subject = '', bodymail = '', emaildata = {}, tryNotify = null
         
         if (docs.budgetType && docs.budgetType === BUDGET_FORM) {
+          
           subject = 'Pedido de Orçamento - [[name]], [[street]]'.replace('[[name]]', docs.budgetName).replace('[[street]]', docs.budgetCity)
           bodymail = '<h2>{{subtitle}}</h2>'.replace('{{subtitle}}', subject)
           bodymail += '<ul>'
@@ -430,13 +432,9 @@ async function budgetsRequest (context) {
           bodymail += '<li><strong>[[label]]</strong>: [[value]] </li>'.replace('[[label]]', labelHelper('budgetMobile')).replace('[[value]]', serviceType(docs['budgetMobile']))
           bodymail += '</ul>'
 
-          emaildata = {
-            to: 'geral@safeclean.pt',
-            subject: subject,
-            html: bodymail
-          }
-
+          emaildata = {to: 'geral@safeclean.pt',subject: subject,html: bodymail}
           tryNotify = await Notificator(emaildata)
+
           if (tryNotify && tryNotify.iook) {
             console.log('email sent to {{email}} :)'.replace('{{email}}', emaildata.to))       
             var smsbody = 'SAFECLEAN O cliente [[name]] pretende ser contactado. [[mobile]].'.replace('[[name]]',  docs['budgetName']).replace('[[mobile]]', docs['budgetMobile']) 

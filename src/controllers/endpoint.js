@@ -97,11 +97,17 @@ async function execute (req, res, next) {
                       case w2ui.options.SIGNUP:                      
                       w2uiRespData = await w2ui.register(w2uiRecord)
                         break;
+                      case w2ui.options.ACCOUNT_RECOVERY:    
+                      w2uiRespData = {
+                        status: 200,
+                        output: {message: '', success: {}}
+                      }  
+                        break;
                       default:
                         break;
                     }
-             
-                    if(w2uiRespData.status === 200){
+                  
+                    if(w2uiRespData.status === 200){  
                       outresp['status'] = 'success'
                       outresp['dataresponse'] = w2uiRespData
                     } else {
@@ -150,13 +156,18 @@ async function execute (req, res, next) {
 function resolveW2uiResponses () {
   var outresp = {}
   switch (orcapicontroller.main.REQ_ACTION) {
-    case 1000:
+    case 2000:
       outresp['status'] = 'success'
       outresp['record'] = {email: 'exemplo@exemplo.com'}
       break;
-    case 2000:
+    case 1000:
       outresp['status'] = 'success'
       outresp['record'] = {name: 'exemplo', email: 'exemplo@exemplo.com'}
+      break;
+    case 4000:
+      outresp['status'] = 'success'
+      outresp['record'] = {name: 'exemplo', email: 'exemplo@exemplo.com'}
+      outresp['fields'] = [{ field: 'orc', type: 'email', required: true, html: { caption: 'orc', attr: 'style="width: 300px"' } }]
       break;
     default:
       outresp['status'] = 'success'
