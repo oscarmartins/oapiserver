@@ -100,7 +100,7 @@ async function execute (req, res, next) {
                       case w2ui.options.ACCOUNT_RECOVERY:    
                       w2uiRespData = {
                         status: 200,
-                        output: {message: '', success: {}}
+                        output: {message: '', success:resolveW2uiResponses(orcapicontroller.main.httpRequest.body.record)}
                       }  
                         break;
                       default:
@@ -128,7 +128,7 @@ async function execute (req, res, next) {
                     if (orcapicontroller.main.httpRequest.body.cmd) {
                       const w2uicmd = orcapicontroller.main.httpRequest.body.cmd
                       if (w2uicmd === 'get') {
-                        Object.assign(outresp, resolveW2uiResponses())
+                        Object.assign(outresp, resolveW2uiResponses(orcapicontroller.main.httpRequest.body.record))
                       } else {
                         outresp['status'] = 'success'
                         outresp['record'] = {/**clear**/}
@@ -153,7 +153,8 @@ async function execute (req, res, next) {
     return true
 } 
 
-function resolveW2uiResponses () {
+function resolveW2uiResponses (records) {
+  const w2uiRecord = records || null
   var outresp = {}
   switch (orcapicontroller.main.REQ_ACTION) {
     case 2000:
@@ -166,9 +167,14 @@ function resolveW2uiResponses () {
       break;
     case 4000:
       outresp['status'] = 'success'
-      outresp['record'] = {name: 'exemplo', email: 'exemplo@exemplo.com'}
-      outresp['fields'] = [{ field: 'orc', type: 'email', required: true, html: { caption: 'orc', attr: 'style="width: 300px"' } }]
+      outresp['record'] = {email: (w2uiRecord ? w2uiRecord.email : 'exemplo@exemplo.com')}
+      outresp['fields'] = [{ name: 'code', type: 'text', required: true, html: { caption: 'code', attr: 'style="width: 300px"' } }]
       break;
+    case 4001:
+      outresp['status'] = 'success'
+      outresp['record'] = {code: w2uiRecord ? w2uiRecord.code : 'codigo segurança'}
+      outresp['fields'] = [{ name: 'password', type: 'password', required: true, html: { caption: 'password', attr: 'style="width: 300px"' } } ,{ name: 'passwordConfirm', type: 'password', required: true, html: { caption: 'password confirm', attr: 'style="width: 300px"' } }]
+    break;
     default:
       outresp['status'] = 'success'
       outresp['record'] = {}
