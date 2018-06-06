@@ -1,3 +1,4 @@
+const accountController = require('../controllers/AccountController')
 const auth = require('../controllers/AuthenticationController')
 const AccountPolicy = require('../policies/AccountPolicy')
 
@@ -16,7 +17,11 @@ const instance = {
             }
         }
     },
-    passwordRecovery: auth.passwordRecovery,
+    passwordRecovery: async function (req, res, next) {
+        //auth.passwordRecovery
+        const result = await accountController.execute(req, res)
+        return result
+    },
     logout: auth.signout
 }
 

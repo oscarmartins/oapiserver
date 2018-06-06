@@ -33,7 +33,8 @@ const OPTIONS = {
   fetchApiPolicy: 7017,
   services: {
     root: 996699,
-    budgetsRequest: 1000
+    budgetsRequest: 1000,
+    w2ui: 9999
   }
 }
 
