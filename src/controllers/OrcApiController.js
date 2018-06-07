@@ -47,11 +47,17 @@ async function responseSender (result) {
   return result
 }
 
+async function resolveError (paramErr) {
+  const error = (paramErr.error && paramErr.error.length !== 0) ? paramErr.error : 'Não foi possivel concluir o pedido requerido. Por favor tente mais tarde. Obrigado.'
+  instance.responseSender({status: 500, output: {error: error}})
+}
+
 const instance = {
   init: (req, res, next) => {return init(req, res, next)},
   main: main,
   preparams: preparams,
-  responseSender: (result) => {return responseSender(result)}
+  responseSender: (result) => {return responseSender(result)},
+  resolveError: (paramErr) => {return resolveError(paramErr)}
 }
 
 module.exports = instance

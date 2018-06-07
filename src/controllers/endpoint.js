@@ -52,6 +52,15 @@ async function execute (req, res, next) {
               const serverContext = orcapicontroller.main.httpRequest.headers.severcontext
               
               if(serverContext === 'w2ui') {
+                const w2uiService = require('../services/w2ui')
+                const outresp = await w2uiService.executeService(orcapicontroller)                
+                orcapicontroller.responseSender({status: 200, output: outresp})
+              } else {
+                hasErrors = true
+              }    
+              /**
+               * 
+              if(serverContext === 'w2ui_BLOCK') {
                   const w2ui = require('../services/w2ui')
                   const outresp = {}
                   
@@ -62,34 +71,11 @@ async function execute (req, res, next) {
                     console.log('no authorization')
                   }
 
-                  /**
-                  let w2uiRespData = null
-                  const w2uiRecord = orcapicontroller.main.httpRequest.body.record
-
-                  let w2cmd = orcapicontroller.main.httpRequest.body.cmd
-
-                  switch (orcapicontroller.main.REQ_ACTION) {
-                      case 1000:
-                      if (w2cmd === w2ui.SAVE) {
-                        w2uiRespData = await w2ui.login(w2uiRecord)
-                      } else { 
-                        outresp['status'] = 'success'
-                        outresp['record'] = w2cmd === w2ui.GET ? {email: 'exemplo@exemplo.com'} : {}
-                      }
-                        break;
-                      case 2000:
-                      w2uiRespData = await w2ui.register(w2uiRecord)
-                        break;
-                      default:
-                        break;
-                    }
-
-                   **/
-
-
                   if(orcapicontroller.main.httpRequest.body.cmd === 'save') {
+                    
                     let w2uiRespData = null
                     const w2uiRecord = orcapicontroller.main.httpRequest.body.record
+                    
                     switch (orcapicontroller.main.REQ_ACTION) {
                       case apiPolicy.SIGNIN:
                       w2uiRespData = await w2ui.login(w2uiRecord)
@@ -136,14 +122,15 @@ async function execute (req, res, next) {
                         Object.assign(outresp, resolveW2uiResponses(orcapicontroller.main.httpRequest.body.record))
                       } else {
                         outresp['status'] = 'success'
-                        outresp['record'] = {/**clear**/}
+                        outresp['record'] = {}
                       }
                     }
                   }
                 orcapicontroller.responseSender({status: 200, output: outresp})
               } else {
                 hasErrors = true
-              }              
+              }  
+              **/            
               break;
             default:
               hasErrors = true

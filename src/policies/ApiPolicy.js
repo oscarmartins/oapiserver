@@ -35,6 +35,13 @@ const OPTIONS = {
     root: 996699,
     budgetsRequest: 1000,
     w2ui: 9999
+  },
+  EMAIL_MANAGER:{
+    fetchProfiles: 2018706100,
+    retrieveProfileById: 2018706200,
+    new: 2018706300,
+    update: 2018706400,
+    remove: 2018706500
   }
 }
 
