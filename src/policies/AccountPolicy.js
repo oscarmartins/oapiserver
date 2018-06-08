@@ -40,6 +40,9 @@ function schemaAccountRecovery (mode) {
   if (mode === 'email') {
     return {email: Joi.string().email()}
   }
+  if (mode === 'code') {
+    return {code: Joi.string().uuid()}
+  }
   if (mode === 'reset') {
     return {password: Joi.string().regex(new RegExp('^[a-zA-Z0-9]{8,32}$')).required().options({
       language: {
@@ -71,6 +74,9 @@ module.exports = {
     if (mode === 'email') {
       objinput = {email: inputs.email}
     }
+    if (mode === 'code') {
+      objinput = {code: inputs.code}
+    }
     if (mode === 'reset') {
       objinput = {password: inputs.password, confirmPassword: inputs.confirmPassword}
     }
@@ -81,6 +87,10 @@ module.exports = {
           output.isok = false
           output.error = error.details[0].message
           break
+        case 'code': 
+          output.isok = false
+          output.error = 'Código de Segurança não está no formato correto.'
+        break
         case 'password':
           output.isok = false
           output.error = error.details[0].message

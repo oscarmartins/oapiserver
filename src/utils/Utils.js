@@ -51,7 +51,7 @@ function tokenVerify (token) {
     })
   } catch (error) {
     if (error) {
-      console.log(error.message)
+      console.log('tokenVerify -> ', error.message)
     }
     tokenIOOK = false
   }
