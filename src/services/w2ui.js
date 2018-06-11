@@ -1,4 +1,3 @@
-const accountController = require('../controllers/AccountController')
 const auth = require('../controllers/AuthenticationController')
 const AccountPolicy = require('../policies/AccountPolicy')
 const EmailManager = require('../controllers/EmailManager')
