@@ -63,8 +63,6 @@ async function passwordRecovery (w2records) {
             output: {error: checkRecords.error}
           }
     }
-
-    
 }
 
 async function logout () {
