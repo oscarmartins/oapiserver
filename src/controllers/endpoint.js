@@ -41,6 +41,12 @@ async function execute (req, res, next) {
     
     orcapicontroller.init(req, res, next)
 
+    if (req.originalUrl.includes('viewController')){
+      const viewController = require('./ViewController')
+      const vres = await viewController.loadView(orcapicontroller)
+      return true
+    }
+
     if(Object.keys(req.body).length === 0){
       /**
       console.log(req)
@@ -75,7 +81,7 @@ async function execute (req, res, next) {
 } 
 
 const endpoint = {
-  execute: (req, res, next) => {execute(req, res, next)}
+  execute: async (req, res, next) => {execute(req, res, next)}
 }
 
 module.exports = endpoint

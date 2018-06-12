@@ -20,6 +20,14 @@ module.exports = (app) => {
   app.get('/orcv2', ApiEndpoint.execute)
 
   app.get('/orcv2/fetchApiPolicy', ApiController.fetchApiPolicy)
+  app.get('/orcv2/viewController', async (req, res, next) => {
+    try {
+      const user = await ApiEndpoint.execute(req, res, next)
+    } catch (e) {
+      //this will eventually be handled by your error handling middleware
+      next(e) 
+    }
+  })
 
   app.get('/emailer', isAuthenticated, MailerController.fetchProfiles)
   app.get('/emailer/:profileid', isAuthenticated, MailerController.retrieveProfileById)

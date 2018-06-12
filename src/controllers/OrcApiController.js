@@ -1,3 +1,4 @@
+const apiPolicy = require('../policies/ApiPolicy')
 const ERROR_MISSING_REQ_PAR_01 = 'Error [Parameter] [missing REQ_CONTEXT]'
 const ERROR_MISSING_REQ_PAR_02 = 'Error [Parameter] [missing REQ_ACTION]'
 const ERROR_MISSING_REQ_PAR_03 = 'Error [Parameter] [missing REQ_INPUTS]'
@@ -53,6 +54,7 @@ async function resolveError (paramErr) {
 }
 
 const instance = {
+  ApiPolicy: apiPolicy,
   init: (req, res, next) => {return init(req, res, next)},
   main: main,
   preparams: preparams,
