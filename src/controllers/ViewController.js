@@ -21,7 +21,7 @@ async function renderLayoutToolbar (tagname) {
         items: []
     }
     if (await checkAuthorization()) {
-        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html" })
+        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/login.html" })
     } else {
         viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/start.html" })
         viewController[tagname].items.push({ type: "spacer"})
