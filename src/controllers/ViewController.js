@@ -21,7 +21,7 @@ async function renderLayoutToolbar (tagname) {
         items: []
     }
     if (await checkAuthorization()) {
-        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/login.html" })
+        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "SignOut", icon: " fas fa-home", route: "app/data/login.html" })
     } else {
         viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/start.html" })
         viewController[tagname].items.push({ type: "spacer"})
@@ -34,9 +34,7 @@ async function renderLayoutToolbar (tagname) {
         viewController[tagname].items.push({ type: "button",  id: "info",  caption: "", icon: " fas fa-exclamation-circle", route: "app/data/infoApp.html" })
         viewController[tagname].items.push({ type: "spacer"})
         viewController[tagname].items.push({ type: "button",  id: "test01",  caption: "test dashboard", icon: " fas fa-exclamation-circle", route: "app/data/dashboard.html" })
-    }
-    
-    
+    }    
 }
 
 const instance = {
