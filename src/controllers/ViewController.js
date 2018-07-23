@@ -1,14 +1,24 @@
 const jwtoken = require('../utils/Utils')['jwtToken']
+const CustomerController = require('./CustomerController')
 let orcApiController = null
+let user, costumer
 
 const layout = ['orc_toolbar', 'orc_sidebar']
 const layoutRendered = []
+/**
+ * Token required
+ */
+const AUTH_ROUTES = ['app/data/dashboard.html']
 
 const viewController = {}
-async function checkAuthorization () {
+async function checkAuthorization (loadUser) {
     const authorization = jwtoken.tokenRequestVerify(orcApiController.main.httpRequest)
     if(authorization) {
         //console.log('token authorization', authorization)
+        if (loadUser) {
+            user = await CustomerController.fetchUserByEmail(authorization._id, authorization.email)
+            costumer = await CustomerController.fechCustomerProfile(user)
+        }
     } else {
         //console.log('no authorization')
     }
@@ -37,6 +47,52 @@ async function renderLayoutToolbar (tagname) {
     }    
 }
 
+async function renderLayoutSidebar(tagname) {
+    viewController[tagname] = {
+        name: tagname,
+        nodes: []
+    }
+    if (await checkAuthorization(true)) {
+        
+        if (user) {
+            console.log(1)
+        }
+        if (costumer) {
+            console.log(2)
+        }
+       console.log(3)
+    }
+}
+
+async function serverActions () {
+
+    let {fromroute} = orcApiController.main.httpRequest.headers
+    let redirectTo = '#/app/data/login.html'
+
+    if (typeof fromroute !== 'undefined') {
+        AUTH_ROUTES.forEach(function (v) {
+            if ((fromroute.replace('#', '')) === v) {
+                fromroute = true
+                return
+            }
+            fromroute = false
+        })
+
+        if (fromroute) {
+            redirectTo = await checkAuthorization(false) ? '' : redirectTo
+        } else {
+            redirectTo = ''
+        }
+    } 
+
+    this.options = { 
+        redirect: {
+            url: redirectTo
+        }       
+    }
+    return this.options
+}
+
 const instance = {
     loadView : async (OrcApiController) => {
        try {
@@ -52,7 +108,9 @@ const instance = {
         viewController['ApiPolicy'] = orcApiController.ApiPolicy
 
         layoutRendered[0] = await renderLayoutToolbar(layout[0])
-
+        layoutRendered[1] = await renderLayoutSidebar(layout[1])
+        const sactions = await serverActions()
+        viewController['serverActions'] = sactions
         orcApiController.responseSender({status: 200, output: viewController})
 
         } catch (error) {

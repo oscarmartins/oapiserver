@@ -67,6 +67,9 @@ const instance = {
     }
     return true
   },
+  async fetchUserByEmail (id, email) {
+    return await fetchUserByEmail(id, email)
+  },
   async fechCustomerProfile (payload) {
     var outdata = utils.resultOutput.resultOutputDataOk({})
     try {
