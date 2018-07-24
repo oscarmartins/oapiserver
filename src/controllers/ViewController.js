@@ -53,25 +53,22 @@ async function renderLayoutSidebar(tagname) {
     viewController[tagname] = {
         name: tagname,
     }
-    if (await checkAuthorization(true)) {
-        
+    if (await checkAuthorization(true)) {        
         if (user) {
-            console.log(1)
-
             viewController[tagname].topHTML = '<div style="background-color: #eee; padding: 10px 5px; border-bottom: 1px solid silver">{useremail}</div>'.replace('{useremail}', user.email),
-            viewController[tagname].nodes = [{ id: 'level-1', text: 'Minha Conta', img: 'icon-folder', expanded: true, group: true,
-            nodes: [ 
-                { id: 'level-1-1', text: 'Perfil', icon: 'fa-home' },
-                { id: 'level-1-2', text: 'Dados Contacto', icon: 'fa-coffee' },
-                { id: 'level-1-3', text: 'Dados Acesso', icon: 'fa-comment-alt' }
-              ]
-          }]
-
+            viewController[tagname].nodes = [
+                { 
+                id: 'level-1', 
+                text: 'Minha Conta', 
+                img: 'icon-folder', 
+                expanded: true, group: true,
+                nodes: [ 
+                    { id: 'level-1-1', text: 'Perfil', icon: 'fa-home' },
+                    { id: 'level-1-2', text: 'Dados Contacto', icon: 'fa-coffee' },
+                    { id: 'level-1-3', text: 'Dados Acesso', icon: 'fa-comment-alt' }
+                ]
+            }]
         }
-        if (costumer) {
-            console.log(2)
-        }
-       console.log(3)
     }
 }
 
