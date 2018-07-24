@@ -17,7 +17,7 @@ async function checkAuthorization (loadUser) {
         //console.log('token authorization', authorization)
         if (loadUser) {
             user = await CustomerController.fetchUserByEmail(authorization._id, authorization.email)
-            costumer = await CustomerController.fechCustomerProfile(user)
+            costumer = await CustomerController.fetchCustomer(user)
         }
     } else {
         //console.log('no authorization')
@@ -31,7 +31,9 @@ async function renderLayoutToolbar (tagname) {
         items: []
     }
     if (await checkAuthorization()) {
-        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "SignOut", icon: " fas fa-home", route: "app/data/login.html" })
+        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html" })
+        viewController[tagname].items.push({ type: "spacer"})
+        viewController[tagname].items.push({ type: "button",  id: "logout",  caption: "SignOut", icon: " fas fa-signout", route: "app/data/login.html" })
     } else {
         viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/start.html" })
         viewController[tagname].items.push({ type: "spacer"})
@@ -50,12 +52,21 @@ async function renderLayoutToolbar (tagname) {
 async function renderLayoutSidebar(tagname) {
     viewController[tagname] = {
         name: tagname,
-        nodes: []
     }
     if (await checkAuthorization(true)) {
         
         if (user) {
             console.log(1)
+
+            viewController[tagname].topHTML = '<div style="background-color: #eee; padding: 10px 5px; border-bottom: 1px solid silver">{useremail}</div>'.replace('{useremail}', user.email),
+            viewController[tagname].nodes = [{ id: 'level-1', text: 'Minha Conta', img: 'icon-folder', expanded: true, group: true,
+            nodes: [ 
+                { id: 'level-1-1', text: 'Perfil', icon: 'fa-home' },
+                { id: 'level-1-2', text: 'Dados Contacto', icon: 'fa-coffee' },
+                { id: 'level-1-3', text: 'Dados Acesso', icon: 'fa-comment-alt' }
+              ]
+          }]
+
         }
         if (costumer) {
             console.log(2)
@@ -71,7 +82,7 @@ async function serverActions () {
 
     if (typeof fromroute !== 'undefined') {
         AUTH_ROUTES.forEach(function (v) {
-            if ((fromroute.replace('#', '')) === v) {
+            if ((fromroute.replace('#/', '').replace('#', '')) === v) {
                 fromroute = true
                 return
             }
