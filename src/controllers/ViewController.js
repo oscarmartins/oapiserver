@@ -63,9 +63,9 @@ async function renderLayoutSidebar(tagname) {
                 img: 'icon-folder', 
                 expanded: true, group: true,
                 nodes: [ 
-                    { id: 'level-1-1', text: 'Perfil', icon: 'fa-home' },
-                    { id: 'level-1-2', text: 'Dados Contacto', icon: 'fa-coffee' },
-                    { id: 'level-1-3', text: 'Dados Acesso', icon: 'fa-comment-alt' }
+                    { id: 'costumerProfile', text: 'Perfil', icon: 'fa-home' },
+                    { id: 'costumerContct', text: 'Dados Contacto', icon: 'fa-coffee' },
+                    { id: 'costumerPasswordChange', text: 'Dados Acesso', icon: 'fa-comment-alt' }
                 ]
             }]
         }
