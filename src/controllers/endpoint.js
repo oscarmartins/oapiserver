@@ -44,7 +44,7 @@ async function execute (req, res, next) {
     if (req.originalUrl.includes('viewController')){
       const viewController = require('./ViewController')
       const vres = await viewController.loadView(orcapicontroller)
-      return true
+      return next()
     }
 
     if(Object.keys(req.body).length === 0){

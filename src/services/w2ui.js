@@ -6,8 +6,10 @@ const orcapicontroller = {}
 const ERROR_MESSAGE_NO_ARGUMENTS = 'Nao foi possivel executar o servico. Erro no argumento base.'
 const ERROR_MESSAGE_CMD_NOT_IMPLEMENTED = '** COMANDO NÃO ESTA IMPLEMENTADO **'
 const ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED = '** RESPONSE ACTION NÃO ACEITE **'
+const ERROR_MESSAGE_USER_NOT_AUTHORIZED = '[SECURITY] NOT AUTHORIZED!!'
 const SAVE = 'save'
 const GET = 'get'
+const GRID_CODE = 1290.100
 
 const apiPolicy = auth.options
 
@@ -91,12 +93,12 @@ async function executeService (oap) {
     }
     try {        
         if (oap) {
+            
             Object.assign(orcapicontroller,oap)
-
-            const checkAuthorizationTest = await checkAuthorization()
-            //console.log('checkAuthorization', checkAuthorizationTest)            
             const {record, cmd} = orcapicontroller.main.httpRequest.body
             
+            this.checkAuthorizationTest = await checkAuthorization()
+
             switch (orcapicontroller.main.REQ_ACTION) {
                 case apiPolicy.SIGNUP:
                     if (cmd === SAVE) {
@@ -172,6 +174,75 @@ async function executeService (oap) {
                         w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
                     }  
                     break;
+                    case 1290: 
+                        if (!this.checkAuthorizationTest) {
+                            throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                        }
+                        if (cmd === SAVE) {
+                            w2uiRespData.message = SAVE + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
+                        } else if (cmd === GET) {
+                            const {User} = require('../models')
+                            const usrs = await User.find({})                            
+                            const _data = {
+                                status: GRID_CODE,
+                                output: {
+                                    "total": usrs.length,
+                                    "records": []
+                                }
+                              }
+                              let item = {}
+                              usrs.forEach(function (i, p) {
+                                item = {
+                                    recid: p,
+                                    id: i.id,
+                                    name: i.name,
+                                    email: i.email
+                                 } 
+                                _data.output.records.push(item)
+                              });
+
+                            w2uiRespData = _data
+
+                        } else {
+                            w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
+                        }         
+                    break
+                    case 12100:                         
+                        if (!this.checkAuthorizationTest) {
+                            throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                        }
+                        if (cmd === SAVE) {
+                            w2uiRespData.message = SAVE + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
+                        } else if (cmd === GET) {
+                            const {Accounts} = require('../models')
+                            const accounts = await Accounts.find({})                            
+                            const _data = {
+                                status: GRID_CODE,
+                                output: {
+                                    "total": accounts.length,
+                                    "records": []
+                                }
+                              }
+                              let item = {}
+                              accounts.forEach(function (i, p) {
+                                item = {
+                                    recid: p,
+                                    user_id: i.user_id,
+                                    accountStatus: i.accountStatus,
+                                    nextStage: i.nextStage,
+                                    code: i.code,
+                                    dateCreated: i.dateCreated,
+                                    dateUpdated: i.dateUpdated
+                                 } 
+                                _data.output.records.push(item)
+                              });
+
+                            w2uiRespData = _data
+
+                        } else {
+                            w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
+                        }         
+                    break
                 default:
                     throw new Error(ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED)
                     break;
@@ -192,6 +263,12 @@ async function executeService (oap) {
     if(w2uiRespData.status === 200){  
         outresp['status'] = 'success'
         outresp['dataresponse'] = w2uiRespData
+    } else if(w2uiRespData.status === 1290.100){ 
+        w2uiRespData.status = 200
+        outresp['status'] = 'success'
+        outresp['dataresponse'] = w2uiRespData
+        outresp['total'] = w2uiRespData.output.total
+        outresp['records'] = w2uiRespData.output.records
     } else {
         let message = 'found error '
         switch (w2uiRespData.status) {

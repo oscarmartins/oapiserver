@@ -31,9 +31,10 @@ async function renderLayoutToolbar (tagname) {
         items: []
     }
     if (await checkAuthorization()) {
-        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html" })
-        viewController[tagname].items.push({ type: "spacer"})
-        viewController[tagname].items.push({ type: "button",  id: "logout",  caption: "SignOut", icon: " fas fa-signout", route: "app/data/login.html" })
+        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html?rendered="+new Date().getTime() })
+        viewController[tagname].items.push({ type: "spacer"})        
+        viewController[tagname].items.push({ type: "radio",  id: "refresh",  caption: "", icon: " fas fa-sync-alt", action: "refreshAll" })
+        viewController[tagname].items.push({ type: "button",  id: "logout",  caption: "", icon: " fas fa-sign-out-alt", route: "app/data/logout.html" })       
     } else {
         viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/start.html" })
         viewController[tagname].items.push({ type: "spacer"})
@@ -43,9 +44,9 @@ async function renderLayoutToolbar (tagname) {
         viewController[tagname].items.push({ type: "spacer"})
         viewController[tagname].items.push({ type: "button",  id: "recovery",  caption: "Recuperar Conta", icon: " fas fa-key", route: "app/data/recoveryPassword.html" })
         viewController[tagname].items.push({ type: "spacer"})
-        viewController[tagname].items.push({ type: "button",  id: "info",  caption: "", icon: " fas fa-exclamation-circle", route: "app/data/infoApp.html" })
-        viewController[tagname].items.push({ type: "spacer"})
-        viewController[tagname].items.push({ type: "button",  id: "test01",  caption: "test dashboard", icon: " fas fa-exclamation-circle", route: "app/data/dashboard.html" })
+        //viewController[tagname].items.push({ type: "button",  id: "info",  caption: "", icon: " fas fa-exclamation-circle", route: "app/data/infoApp.html" })
+        //viewController[tagname].items.push({ type: "spacer"})
+        //viewController[tagname].items.push({ type: "button",  id: "test01",  caption: "test dashboard", icon: " fas fa-exclamation-circle", route: "app/data/dashboard.html" })
     }    
 }
 
@@ -63,8 +64,8 @@ async function renderLayoutSidebar(tagname) {
                 img: 'icon-folder', 
                 expanded: true, group: true,
                 nodes: [ 
-                    { id: 'costumerProfile', text: 'Perfil', icon: 'fa-home' },
-                    { id: 'costumerContct', text: 'Dados Contacto', icon: 'fa-coffee' },
+                    { id: 'costumerProfile', text: 'Perfil ', icon: 'fa-home' },
+                    { id: 'costumerContact', text: 'Dados Contacto ', icon: 'fa-coffee' },
                     { id: 'costumerPasswordChange', text: 'Dados Acesso', icon: 'fa-comment-alt' }
                 ]
             }]
@@ -76,20 +77,21 @@ async function serverActions () {
 
     let {fromroute} = orcApiController.main.httpRequest.headers
     let redirectTo = '#/app/data/login.html'
-
+    let checkToken = false;
     if (typeof fromroute !== 'undefined') {
+       
         AUTH_ROUTES.forEach(function (v) {
             if ((fromroute.replace('#/', '').replace('#', '')) === v) {
-                fromroute = true
+                checkToken = true
                 return
             }
-            fromroute = false
+            checkToken = false
         })
 
-        if (fromroute) {
+        if (checkToken) {
             redirectTo = await checkAuthorization(false) ? '' : redirectTo
         } else {
-            redirectTo = ''
+            redirectTo = (fromroute.replace('#/', '').replace('#', '')) === 'app/data/logout.html' ? redirectTo  : ''            
         }
     } 
 

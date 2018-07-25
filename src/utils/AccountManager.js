@@ -281,7 +281,7 @@ module.exports = {
           result.accountStatus.params.selectionMode = 'passwords'
         }
       } else {
-        /** if (accountStatus === this.options.onPasswordRecovery && mode === Modes.Signin) {
+        if (accountStatus === this.options.onPasswordRecovery && mode === Modes.Signin) {
           const {code} = account[0]
           const forceUPD = await this.activateAccountAction(user, code)
           if (forceUPD.iook) {
@@ -297,7 +297,6 @@ module.exports = {
           result.accountStatus.error = msg
           result.accountStatus.message = msg
         }
-        **/
       }
     } else {
       result.status = 400
