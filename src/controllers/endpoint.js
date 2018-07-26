@@ -22,7 +22,7 @@ async function w2uiService () {
   if(serverContext === 'w2ui') {
     const w2uiService = require('../services/w2ui')
     outresp = await w2uiService.executeService(orcapicontroller)
-    /****/                
+    /****/  
     orcapicontroller.responseSender({status: 200, output: outresp})
     /****/    
   } else {

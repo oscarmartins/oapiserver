@@ -31,7 +31,7 @@ async function renderLayoutToolbar (tagname) {
         items: []
     }
     if (await checkAuthorization()) {
-        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html?rendered="+new Date().getTime() })
+        viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html"})
         viewController[tagname].items.push({ type: "spacer"})        
         viewController[tagname].items.push({ type: "radio",  id: "refresh",  caption: "", icon: " fas fa-sync-alt", action: "refreshAll" })
         viewController[tagname].items.push({ type: "button",  id: "logout",  caption: "", icon: " fas fa-sign-out-alt", route: "app/data/logout.html" })       
