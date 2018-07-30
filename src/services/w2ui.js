@@ -202,7 +202,6 @@ async function executeService (oap) {
                               });
 
                             w2uiRespData = _data
-
                         } else {
                             w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
                         }         
@@ -236,16 +235,13 @@ async function executeService (oap) {
                                  } 
                                 _data.output.records.push(item)
                               });
-
                             w2uiRespData = _data
-
                         } else {
                             w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
                         }         
                     break
                 default:
                     throw new Error(ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED)
-                    break;
             }
         } else {
             throw new Error(ERROR_MESSAGE_NO_ARGUMENTS)
