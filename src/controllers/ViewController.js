@@ -32,6 +32,9 @@ async function renderLayoutToolbar (tagname) {
     }
     if (await checkAuthorization()) {
         viewController[tagname].items.push({ type: "button",  id: "start",  caption: "Inicio", icon: " fas fa-home", route: "app/data/dashboard.html"})
+        /**experimental */
+        viewController[tagname].items.push({ type: "html", html: '<div class="w2ui-toolbar-search"><table cellpadding="0" cellspacing="0"><tbody><tr>    <td><div class="w2ui-icon icon-search-down w2ui-search-down"></div></td>    <td>        <input type="text" id="grid_grid_search_all" class="w2ui-search-all" tabindex="-1" placeholder="All Fields" value="" >    </td>    <td>        <div class="w2ui-search-clear" id="grid_grid_searchClear" style="display: none">&nbsp;&nbsp;</div>    </td></tr></tbody></table></div>',  id: "global-search",  caption: "", icon: "", route: "app/data/dashboard.html"})
+
         viewController[tagname].items.push({ type: "spacer"})        
         viewController[tagname].items.push({ type: "radio",  id: "refresh",  caption: "", icon: " fas fa-sync-alt", action: "refreshAll" })
         viewController[tagname].items.push({ type: "button",  id: "logout",  caption: "", icon: " fas fa-sign-out-alt", route: "app/data/logout.html" })       
