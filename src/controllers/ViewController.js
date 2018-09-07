@@ -1,7 +1,6 @@
 const jwtoken = require('../utils/Utils')['jwtToken']
 const CustomerController = require('./CustomerController')
-let orcApiController = null
-let user, costumer
+let orcApiController, user, costumer
 
 const layout = ['orc_toolbar', 'orc_sidebar']
 const layoutRendered = []
@@ -14,14 +13,13 @@ const viewController = {}
 async function checkAuthorization (loadUser) {
     const authorization = jwtoken.tokenRequestVerify(orcApiController.main.httpRequest)
     if(authorization) {
-        //console.log('token authorization', authorization)
         if (loadUser) {
             user = await CustomerController.fetchUserByEmail(authorization._id, authorization.email)
             costumer = await CustomerController.fetchCustomer(user)
         }
-    } else {
+    } // else {
         //console.log('no authorization')
-    }
+    // }
     return authorization
 }
 
