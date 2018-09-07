@@ -11,6 +11,10 @@ const options = {
   secretOrKey: config.authentication.jwtSecret
 }
 
+
+
+
+
 async function strategyCallback (jwtPayload, done) {
   try {
     const usr = await User.findOne({'_id': jwtPayload._id}, (err, user) => {
@@ -28,7 +32,6 @@ async function strategyCallback (jwtPayload, done) {
   }
   return done(null, usr)
 }
-
 
 const strategy = new JwtStrategy(options, strategyCallback)
 
