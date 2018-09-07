@@ -11,13 +11,9 @@ const options = {
   secretOrKey: config.authentication.jwtSecret
 }
 
-
-
-
-
-async function strategyCallback (jwtPayload, done) {
+function strategyCallback (jwtPayload, done) {
   try {
-    const usr = await User.findOne({'_id': jwtPayload._id}, (err, user) => {
+    const usr = User.findOne({'_id': jwtPayload._id}, (err, user) => {
       if (err) {
         done(new Error(err), false)
       }
