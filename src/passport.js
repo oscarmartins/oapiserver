@@ -29,8 +29,9 @@ async function strategyCallback (jwtPayload, done) {
   return done(null, usr)
 }
 
+/**
 const strategy = new JwtStrategy(options, strategyCallback)
 
 passport.use(strategy)
-
+ */
 module.exports = passport
