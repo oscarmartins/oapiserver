@@ -13,7 +13,7 @@ const options = {
 
 async function strategyCallback (jwtPayload, done) {
   try {
-    await User.findOne({'_id': jwtPayload._id}, (err, user) => {
+    const usr = await User.findOne({'_id': jwtPayload._id}, (err, user) => {
       if (err) {
         done(new Error(err), false)
       }
@@ -26,6 +26,7 @@ async function strategyCallback (jwtPayload, done) {
   } catch (error) {
     return done(new Error(error), false)
   }
+  return done(null, usr)
 }
 
 const strategy = new JwtStrategy(options, strategyCallback)
