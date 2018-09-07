@@ -6,7 +6,7 @@ const config = require('./config/config')
 const mongoose = require('mongoose')
 const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
-const passport = require('./passport')
+//const passport = require('./passport')
 const app = express()
 //app.use(passport.initialize())
 mongoose.connect('mongodb://localhost:27017/orcadmin')//, {useMongoClient: true}
