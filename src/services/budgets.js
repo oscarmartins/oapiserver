@@ -389,8 +389,8 @@ async function budgetsRequest (context) {
       budgetDoc.budgetDomain = localContext.main.httpRequest.headers.host
       budgetDoc.dateCreated = Date.now()
       budgetDoc.dateUpdated = Date.now()      
-      const saveBudget = await budgetDoc.save(true).then(async function (docs) {
-        
+      const saveBudget = await budgetDoc.save().then(async function (docs) {
+        console.log(1111111);
         var subject = '', bodymail = '', emaildata = {}, tryNotify = null
         
         if (docs.budgetType && docs.budgetType === BUDGET_FORM) {
@@ -493,7 +493,7 @@ const local = {
     BUDGET_SUPPORT: BUDGET_SUPPORT
   },
   budgetsRequest: async function (context) {
-    console.log(getClientIp(context.main.httpRequest, context.main.httpResponse, context.main.next))
+    //console.log(getClientIp(context.main.httpRequest, context.main.httpResponse, context.main.next))
     const br = await budgetsRequest(context)
     return br
   },
