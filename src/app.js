@@ -9,7 +9,7 @@ const MongoStore = require('connect-mongo')(session)
 const passport = require('./passport')
 const app = express()
 app.use(passport.initialize())
-mongoose.connect('mongodb://localhost:27017/orcadmin')//, {useMongoClient: true}
+mongoose.connect('mongodb://localhost:27017/orcadmin', { useNewUrlParser: true })//, {useMongoClient: true}
 app.use(morgan('combined'))
 app.use(bodyParser.json())
 app.use(cors())
