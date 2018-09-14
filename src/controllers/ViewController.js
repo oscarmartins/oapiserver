@@ -63,13 +63,25 @@ async function renderLayoutSidebar(tagname) {
                 id: 'level-1', 
                 text: 'Minha Conta', 
                 img: 'icon-folder', 
-                expanded: true, group: true,
+                expanded: false, group: true,
                 nodes: [ 
                     { id: 'costumerProfile', text: 'Perfil ', icon: 'fa-home' },
                     { id: 'costumerContact', text: 'Dados Contacto ', icon: 'fa-coffee' },
                     { id: 'costumerPasswordChange', text: 'Dados Acesso', icon: 'fa-comment-alt' }
                 ]
-            }]
+            },
+            { 
+                id: 'level-2', 
+                text: 'Sites', 
+                img: 'icon-web', 
+                expanded: false, group: true,
+                nodes: [ 
+                    { id: 'siteConfig', text: 'Sites Detalhes ', icon: 'fa-home' },
+                    { id: 'blogcar', text: 'Gestor Blog ', icon: 'fa-web' }                        
+                ]
+            }
+        
+        ]
         }
     }
 }
