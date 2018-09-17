@@ -100,6 +100,12 @@ async function executeService (oap) {
             this.checkAuthorizationTest = await checkAuthorization()
 
             switch (orcapicontroller.main.REQ_ACTION) {
+                case 100200: 
+                    w2uiRespData.status = 200;
+                    break;
+                case 100400: 
+                    w2uiRespData.status = 200;
+                    break;
                 case apiPolicy.SIGNUP:
                     if (cmd === SAVE) {
                         w2uiRespData = await register(record)

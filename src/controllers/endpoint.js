@@ -64,6 +64,7 @@ async function execute (req, res, next) {
               const respBudget = await budgets()
               break;
             case apiPolicy.services.w2ui:
+            case apiPolicy.services.paluticars:
               const respw2ui = await w2uiService()     
               break;
             default:

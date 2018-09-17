@@ -65,9 +65,9 @@ async function renderLayoutSidebar(tagname) {
                 img: 'icon-folder', 
                 expanded: false, group: true,
                 nodes: [ 
-                    { id: 'costumerProfile', text: 'Perfil ', icon: 'fa-home' },
-                    { id: 'costumerContact', text: 'Dados Contacto ', icon: 'fa-coffee' },
-                    { id: 'costumerPasswordChange', text: 'Dados Acesso', icon: 'fa-comment-alt' }
+                    { id: 'costumerProfile', text: 'Perfil ', icon: 'fa-home' }
+                    // { id: 'costumerContact', text: 'Dados Contacto ', icon: 'fa-coffee' },
+                    // { id: 'costumerPasswordChange', text: 'Dados Acesso', icon: 'fa-comment-alt' }
                 ]
             },
             { 
@@ -80,7 +80,6 @@ async function renderLayoutSidebar(tagname) {
                     { id: 'blogcar', text: 'Gestor Blog ', icon: 'fa-web' }                        
                 ]
             }
-        
         ]
         }
     }

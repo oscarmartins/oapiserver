@@ -34,7 +34,8 @@ const OPTIONS = {
   services: {
     root: 996699,
     budgetsRequest: 1000,
-    w2ui: 9999
+    w2ui: 9999,
+    paluticars: 155015
   },
   EMAIL_MANAGER:{
     fetchProfiles: 2018706100,
