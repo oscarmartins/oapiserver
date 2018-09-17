@@ -101,10 +101,18 @@ async function executeService (oap) {
 
             switch (orcapicontroller.main.REQ_ACTION) {
                 case 100200: 
-                    w2uiRespData.status = 200;
-                    break;
                 case 100400: 
+                    if (!this.checkAuthorizationTest) {
+                        throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                    }
                     w2uiRespData.status = 200;
+                    if (orcapicontroller.main.REQ_ACTION === 100200) {
+                        
+                    } else if (orcapicontroller.main.REQ_ACTION === 100400) {
+                        
+                    } else {
+                        w2uiRespData.message = POST + ' REQ_ACTION=' + orcapicontroller.main.REQ_ACTION + ' ' + ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED
+                    }
                     break;
                 case apiPolicy.SIGNUP:
                     if (cmd === SAVE) {
