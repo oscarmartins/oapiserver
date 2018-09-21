@@ -1,4 +1,5 @@
 const auth = require('../controllers/AuthenticationController')
+const {save, saveAndPublish} = require('../controllers/StandBlog')
 const AccountPolicy = require('../policies/AccountPolicy')
 const EmailManager = require('../controllers/EmailManager')
 const jwtoken = require('../utils/Utils')['jwtToken']
@@ -98,7 +99,7 @@ async function executeService (oap) {
             const {record, cmd} = orcapicontroller.main.httpRequest.body
             
             this.checkAuthorizationTest = await checkAuthorization()
-
+            
             switch (orcapicontroller.main.REQ_ACTION) {
                 case 100200: 
                 case 100400: 
@@ -106,10 +107,11 @@ async function executeService (oap) {
                         throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
                     }
                     w2uiRespData.status = 200;
+                    let res
                     if (orcapicontroller.main.REQ_ACTION === 100200) {
-                        
+                        res = await save(orcapicontroller.main.REQ_INPUTS)
                     } else if (orcapicontroller.main.REQ_ACTION === 100400) {
-                        
+                        res = await saveAndPublish(orcapicontroller.main.REQ_INPUTS)
                     } else {
                         w2uiRespData.message = POST + ' REQ_ACTION=' + orcapicontroller.main.REQ_ACTION + ' ' + ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED
                     }

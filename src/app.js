@@ -12,7 +12,7 @@ app.use(passport.initialize())
 mongoose.connect('mongodb://localhost:27017/orcadmin', {useNewUrlParser:true})
 mongoose.set('useCreateIndex', true)
 app.use(morgan('combined'))
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit: "50mb"}))
 app.use(cors())
 
 app.use(session({
