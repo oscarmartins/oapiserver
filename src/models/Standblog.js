@@ -19,7 +19,7 @@ const standblog = new Schema({
   pubQuilometros: { type: String },
   pubStand: { type: String },
   pubVersao: { type: String },
-  pubGalery: {type: Array},
+  pubGalery: {any: [{}]},
   published: {type: Boolean },
   dateCreated: { type: Date },
   dateUpdated: { type: Date }

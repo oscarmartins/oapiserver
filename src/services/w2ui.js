@@ -90,7 +90,10 @@ async function checkAuthorization () {
 async function executeService (oap) {
     let w2uiRespData = {
         status: 200,
-        message: ''
+        message: '',
+        output: {
+            error: ''
+        }
     }
     try {        
         if (oap) {
@@ -107,7 +110,7 @@ async function executeService (oap) {
                         throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
                     }
                     w2uiRespData.status = 200;
-                    let res
+                    let res = null
                     if (orcapicontroller.main.REQ_ACTION === 100200) {
                         res = await save(orcapicontroller.main.REQ_INPUTS)
                     } else if (orcapicontroller.main.REQ_ACTION === 100400) {
@@ -115,6 +118,14 @@ async function executeService (oap) {
                     } else {
                         w2uiRespData.message = POST + ' REQ_ACTION=' + orcapicontroller.main.REQ_ACTION + ' ' + ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED
                     }
+
+                    if (res && res.iook) {
+                        w2uiRespData.output = res
+                    } else {
+                        w2uiRespData.status = 400
+                        w2uiRespData.output.error = res.error
+                    }
+
                     break;
                 case apiPolicy.SIGNUP:
                     if (cmd === SAVE) {
