@@ -1,5 +1,5 @@
 const auth = require('../controllers/AuthenticationController')
-const {save, saveAndPublish} = require('../controllers/StandBlog')
+const {save, saveAndPublish, fetchAll, deleteById, publishedById, findById} = require('../controllers/StandBlog')
 const AccountPolicy = require('../policies/AccountPolicy')
 const EmailManager = require('../controllers/EmailManager')
 const jwtoken = require('../utils/Utils')['jwtToken']
@@ -105,7 +105,8 @@ async function executeService (oap) {
             
             switch (orcapicontroller.main.REQ_ACTION) {
                 case 100200: 
-                case 100400: 
+                case 100400:
+                case 100600: 
                     if (!this.checkAuthorizationTest) {
                         throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
                     }
@@ -115,6 +116,33 @@ async function executeService (oap) {
                         res = await save(orcapicontroller.main.REQ_INPUTS)
                     } else if (orcapicontroller.main.REQ_ACTION === 100400) {
                         res = await saveAndPublish(orcapicontroller.main.REQ_INPUTS)
+                    }else if (orcapicontroller.main.REQ_ACTION === 100600) {
+                        /**
+                         * RestFull actions
+                         * SUBACTION
+                         * SUBVALUE
+                         *  **/
+                        if (orcapicontroller.main.REQ_INPUTS.SUBACTION) {
+                            const subaction = orcapicontroller.main.REQ_INPUTS.SUBACTION
+
+                            if (subaction === 'findById') {
+                                res = await findById(orcapicontroller.main.REQ_INPUTS)
+                                console.log(res)
+                            } else if (subaction === 'readAll') {
+                                res = await fetchAll(orcapicontroller.main.REQ_INPUTS)
+                                console.log(res)
+                            } else if (subaction === 'deleteById') {
+                                res = await deleteById(orcapicontroller.main.REQ_INPUTS)
+                                console.log(res)
+                            } else if (subaction === 'publishedById') {
+                                res = await publishedById(orcapicontroller.main.REQ_INPUTS)
+                                console.log(res)
+                            } else {
+                                w2uiRespData.message = POST + ' REQ_INPUTS=' + orcapicontroller.main.REQ_INPUTS + ' ' + ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED
+                            }
+                        } else {
+                            w2uiRespData.message = POST + ' REQ_INPUTS.SUBACTION=' + orcapicontroller.main.REQ_INPUTS + ' ' + ERROR_MESSAGE_NO_ARGUMENTS
+                        }
                     } else {
                         w2uiRespData.message = POST + ' REQ_ACTION=' + orcapicontroller.main.REQ_ACTION + ' ' + ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED
                     }

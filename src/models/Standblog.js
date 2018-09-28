@@ -1,6 +1,11 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
-
+/**
+ * pubGalery[{
+    id: newID,
+    base64: b64 
+  }]
+ */
 const standblog = new Schema({
   pubName: {type: 'String'},
   pubMarca: {type: String },
@@ -19,7 +24,7 @@ const standblog = new Schema({
   pubQuilometros: { type: String },
   pubStand: { type: String },
   pubVersao: { type: String },
-  pubGalery: {any: [{}]},
+  pubGalery: {type: Array},
   published: {type: Boolean },
   dateCreated: { type: Date },
   dateUpdated: { type: Date }
