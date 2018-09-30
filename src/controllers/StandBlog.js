@@ -86,7 +86,8 @@ async function _publishedById (param){
     try {
         if (param && param.id) {
             const published = param.SUBVALUE || false
-            const testfind = await Standblog.findByIdAndUpdate(param.id, {$set: {published: published}}, { new: true }).then((doc) => {
+            let dateUpdated = Date.now()
+            const testfind = await Standblog.findByIdAndUpdate(param.id, {$set: {published: published, dateUpdated: dateUpdated}}, { new: true }).then((doc) => {
                 return doc
             }).catch(function (err) {
                 console.log(err)
@@ -127,13 +128,43 @@ async function _findById (param) {
         return resultOutput.resultOutputError(error)
     }
 }
+async function _pubUpdateById (param) {
+    let msg = '';
+    try {
+        if (param && param.id) {
+            let set = {}
+            Object.keys(param).forEach((key) => {
+                const value = param[key] || null
+                set[key] = value
+            })
+            set.dateUpdated = Date.now()
+            const testupdate = await Standblog.findByIdAndUpdate(param.id, {$set: set}, {new: true}).then((doc) => {
+                return doc
+            }).catch(function (err) {
+                console.log(err)
+                return resultOutput.resultOutputDataError(err)
+            });
+            if (testupdate) {
+                msg = 'a publicação foi actualizada com sucesso!'
+            } else {
+                throw 'erro ao actualizar a publicação _id: ' + param.id
+            }
+        } else {
+            throw 'sem parametros'
+        }
+    } catch (error) {
+        return resultOutput.resultOutputError(error)
+    }
+    return resultOutput.resultOutputSuccess(msg)
+}
 const instance = {
     save: _save,
     saveAndPublish: _saveAndPublish,
     fetchAll: _fetchAll,
     deleteById: _deleteById,
     publishedById: _publishedById,
-    findById: _findById
+    findById: _findById,
+    pubUpdateById: _pubUpdateById
 }
 
 module.exports = instance
