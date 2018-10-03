@@ -108,7 +108,13 @@ async function executeService (oap) {
                 case 100400:
                 case 100600: 
                     if (!this.checkAuthorizationTest) {
-                        throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                        switch (orcapicontroller.main.REQ_ACTION) {
+                            case 100200:
+                            case 100400:
+                                throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                            default:
+                                break;
+                        }
                     }
                     w2uiRespData.status = 200;
                     let res = null;
@@ -116,7 +122,7 @@ async function executeService (oap) {
                         res = await save(orcapicontroller.main.REQ_INPUTS)
                     } else if (orcapicontroller.main.REQ_ACTION === 100400) {
                         res = await saveAndPublish(orcapicontroller.main.REQ_INPUTS)
-                    }else if (orcapicontroller.main.REQ_ACTION === 100600) {
+                    } else if (orcapicontroller.main.REQ_ACTION === 100600) {
                         /**
                          * RestFull actions
                          * SUBACTION
@@ -124,15 +130,15 @@ async function executeService (oap) {
                          *  **/
                         if (orcapicontroller.main.REQ_INPUTS.SUBACTION) {
                             const subaction = orcapicontroller.main.REQ_INPUTS.SUBACTION
-                            if (subaction === 'pubUpdateById') {
+                            if (this.checkAuthorizationTest && subaction === 'pubUpdateById') {
                                 res = await pubUpdateById(orcapicontroller.main.REQ_INPUTS)
                             } else if (subaction === 'findById') {
                                 res = await findById(orcapicontroller.main.REQ_INPUTS)
                             } else if (subaction === 'readAll') {
                                 res = await fetchAll(orcapicontroller.main.REQ_INPUTS)
-                            } else if (subaction === 'deleteById') {
+                            } else if (this.checkAuthorizationTest && subaction === 'deleteById') {
                                 res = await deleteById(orcapicontroller.main.REQ_INPUTS)
-                            } else if (subaction === 'publishedById') {
+                            } else if (this.checkAuthorizationTest && subaction === 'publishedById') {
                                 res = await publishedById(orcapicontroller.main.REQ_INPUTS)
                             } else {
                                 w2uiRespData.message = POST + ' REQ_INPUTS=' + orcapicontroller.main.REQ_INPUTS + ' ' + ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED
