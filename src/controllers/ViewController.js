@@ -131,8 +131,8 @@ const instance = {
 
         layoutRendered[0] = await renderLayoutToolbar(layout[0])
         layoutRendered[1] = await renderLayoutSidebar(layout[1])
-        const sactions = await serverActions()
-        viewController['serverActions'] = sactions
+        const srActions = await serverActions()
+        viewController['serverActions'] = srActions
         orcApiController.responseSender({status: 200, output: viewController})
 
         } catch (error) {

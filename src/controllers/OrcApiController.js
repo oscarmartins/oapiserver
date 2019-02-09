@@ -38,8 +38,8 @@ async function preparams () {
   main.REQ_INPUTS = REQ_INPUTS
   
   /** use debug mode */
-  console.log(main.REQ_CONTEX, main.REQ_ACTION, main.REQ_INPUTS)
-
+  /** console.log(main.REQ_CONTEX, main.REQ_ACTION, main.REQ_INPUTS)*/
+  console.log('REQ_CONTEX=' + main.REQ_CONTEX,'REQ_ACTION=' +  main.REQ_ACTION);
   return {isok: true, error: null}
 }
 

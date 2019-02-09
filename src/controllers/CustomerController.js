@@ -77,23 +77,7 @@ const instance = {
     var outdata = utils.resultOutput.resultOutputDataOk({})
     try {
       if (instance.tokenRequestVerify(payload)) {
-        const {_id, email} = payload.REQ_INPUTS
-        if (!_id) {
-          throw new Error('User ID not valid')
-        }
-        if (!email) {
-          throw new Error('User EMAIL not valid')
-        }
-        const user = await fetchUserByEmail(_id, email)
-        if (!user) {
-          throw new Error('User not found')
-        }
-        const customer = await fetchCustomer(user)
-        if (!customer) {
-          throw new Error('Customer not found')
-        }
-        outdata.success = 'Found Customer'
-        outdata.data = customer
+        const res = await _fechCustomerProfile(payload.REQ_INPUTS, outdata)
       }
     } catch (error) {
       outdata.iook = false
@@ -106,8 +90,45 @@ const instance = {
     var outdata = utils.resultOutput.resultOutputDataOk({})
     try {
       if (instance.tokenRequestVerify(payload)) {
-        const {user, fields} = payload.REQ_INPUTS
+        
+      }
+    } catch (err) {
+      if (err) {
+        if (err.name === 'MongoError' && err.code === instance.options.onAccountValidationCode) {
+          const fieldName = err.errmsg.substring(err.errmsg.lastIndexOf('index:') + 7, err.errmsg.lastIndexOf('_1'))
+          outdata.error = `O Campo ${fieldName} está registado em outra conta. `
+        } else {
+          outdata.error = err.message
+        }
+      } else {
+        outdata.error = 'erro desconhecido'
+      }
+      outdata.iook = false
+      outdata.data = null
+    }
+    return outdata
+  },
+  nohttp: {
+    fechCustomerProfile: async function (payload) {
+      var outdata = utils.resultOutput.resultOutputDataOk({})
+      try {
+        const res = await _fechCustomerProfile(payload, outdata)
+      } catch (error) {
+        outdata.iook = false
+        outdata.error = error.message
+        outdata.data = null
+      }
+      return outdata
+    },
+    updateCustomerProfile : async function (payload) {
+      const {user, fields} = payload.REQ_INPUTS
+        if (!fields) {
+          throw new Error('Customer fields not found')
+        }
         if (instance.customerPolicy(fields)) {
+          if (!user) {
+            throw new Error('Customer user not found')
+          }
           if (!user._id) {
             throw new Error('User ID not valid')
           }
@@ -116,9 +137,6 @@ const instance = {
           }
           if (!(await fetchUserByEmail(user._id, user.email))) {
             throw new Error('User not found')
-          }
-          if (!fields) {
-            throw new Error('Customer fields not found')
           }
           var locCustomer = await fetchCustomer(user)
           var updresult = null
@@ -143,23 +161,33 @@ const instance = {
           outdata.success = 'Customer updated'
           outdata.data = updresult
         }
-      }
-    } catch (err) {
-      if (err) {
-        if (err.name === 'MongoError' && err.code === instance.options.onAccountValidationCode) {
-          const fieldName = err.errmsg.substring(err.errmsg.lastIndexOf('index:') + 7, err.errmsg.lastIndexOf('_1'))
-          outdata.error = `O Campo ${fieldName} está registado em outra conta. `
-        } else {
-          outdata.error = err.message
-        }
-      } else {
-        outdata.error = 'erro desconhecido'
-      }
-      outdata.iook = false
-      outdata.data = null
     }
-    return outdata
   }
+}
+
+async function _fechCustomerProfile (payload, outdata) {
+  const {_id, email} = payload
+  if (!_id) {
+    throw new Error('User ID not valid')
+  }
+  if (!email) {
+    throw new Error('User EMAIL not valid')
+  }
+  const user = await fetchUserByEmail(_id, email)
+  if (!user) {
+    throw new Error('User not found')
+  }
+  const customer = await fetchCustomer(user)
+  if (!customer) {
+    throw new Error('Customer not found')
+  }
+  outdata.success = 'Found Customer'
+  outdata.data = customer
+  return outdata        
+}
+
+async function _updateCustomerProfile () {
+  
 }
 
 module.exports = instance

@@ -9,8 +9,10 @@ const ERROR_MESSAGE_CMD_NOT_IMPLEMENTED = '** COMANDO NÃO ESTA IMPLEMENTADO **'
 const ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED = '** RESPONSE ACTION NÃO ACEITE **'
 const ERROR_MESSAGE_USER_NOT_AUTHORIZED = '[SECURITY] NOT AUTHORIZED!!'
 const SAVE = 'save'
+const DELETE = 'delete'
 const GET = 'get'
 const GRID_CODE = 1290.100
+const FORM_CODE = 1290.200
 
 const apiPolicy = auth.options
 
@@ -44,17 +46,14 @@ async function passwordRecovery (w2records) {
 
     Object.assign(payload.REQ_INPUTS, w2records)
 
+    const req_action = orcapicontroller.main.REQ_ACTION
     let mode = null
-    if (orcapicontroller.main.REQ_ACTION === apiPolicy.ACCOUNT_RECOVERY_EMAIL) {
-        mode = 'email'
+    switch (req_action) {
+        case apiPolicy.ACCOUNT_RECOVERY_EMAIL: mode = 'email'; break;
+        case apiPolicy.ACCOUNT_RECOVERY_CODE: mode = 'code'; break;
+        case apiPolicy.ACCOUNT_RECOVERY_RESET: mode = 'reset'; break;
     }
-    if (orcapicontroller.main.REQ_ACTION === apiPolicy.ACCOUNT_RECOVERY_CODE) {
-        mode = 'code'
-    }
-    if (orcapicontroller.main.REQ_ACTION === apiPolicy.ACCOUNT_RECOVERY_RESET) {
-        mode = 'reset'
-    }
-    
+
     const checkRecords = AccountPolicy.accountRecovery(mode, payload.REQ_INPUTS)
 
     if (checkRecords.isok) {
@@ -97,11 +96,10 @@ async function executeService (oap) {
     }
     try {        
         if (oap) {
+            Object.assign(orcapicontroller,oap);
+            const {record, cmd, limit, offset, selected} = orcapicontroller.main.httpRequest.body;
             
-            Object.assign(orcapicontroller,oap)
-            const {record, cmd} = orcapicontroller.main.httpRequest.body
-            
-            this.checkAuthorizationTest = await checkAuthorization()
+            this.checkAuthorizationTest = await checkAuthorization();
             
             switch (orcapicontroller.main.REQ_ACTION) {
                 case 100200: 
@@ -298,6 +296,87 @@ async function executeService (oap) {
                             w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
                         }         
                     break
+                    case 700999: 
+                        if (!this.checkAuthorizationTest) {
+                            throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                        }
+                        if (cmd === SAVE) {
+                            w2uiRespData.message = SAVE + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
+                        } else if (cmd === GET) {
+                            
+                            const {Banners} = require('../models')
+                            const banners = await Banners.find({userid: user_id})                            
+                            
+                            const ff = 0;
+
+                            /**
+                            const banners = [
+                                {recid: 0,id: '12345',name: 'banner test',toptitle: 'banner@email.com'},
+                            ];
+                            */
+
+                            const _data = {
+                                status: GRID_CODE,
+                                output: {
+                                    "total": banners.length,
+                                    "records": []
+                                }
+                              };
+                              /**
+                              banners.forEach(function (i, p) {
+                                _data.output.records.push({
+                                    recid: p,
+                                    id: i.id,
+                                    name: i.name,
+                                    toptitle: i.toptitle
+                                 });
+                              });
+                              */
+                            w2uiRespData = _data;
+                        } else {
+                            w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED;
+                        }         
+                    break
+                case 130013:
+                if (!this.checkAuthorizationTest) {
+                    throw new Error(ERROR_MESSAGE_USER_NOT_AUTHORIZED)
+                }
+                const customerController = require('../controllers/CustomerController')
+                let customer = null
+                if (cmd === SAVE || cmd === GET) {
+                    customer = await customerController.nohttp.fechCustomerProfile({
+                        _id: this.checkAuthorizationTest._id,
+                        email: this.checkAuthorizationTest.email
+                    });
+                    if (customer.iook) {
+                        if (cmd === GET) {
+                            const _data = {
+                                status: FORM_CODE,
+                                output: {
+                                    "record": {
+                                        firstName: customer.firstName,
+                                        lastName: customer.lastName,
+                                        gender: customer.gender,
+                                        birthDate: customer.birthDate,
+                                        nid: customer.nid
+                                    }
+                                }
+                              }
+                            w2uiRespData = _data
+                        } else if (cmd === SAVE) {
+                        
+                        }
+                    } else {
+                        if (cmd === GET) {
+                            throw new Error('Ainda não atualizou os seus dados!')
+                        } else if (cmd === SAVE) {
+                        
+                        }
+                    }
+                } else {
+                    w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
+                }         
+                break
                 default:
                     throw new Error(ERROR_MESSAGE_REQACTION_NOT_IMPLEMENTED)
             }
@@ -317,7 +396,12 @@ async function executeService (oap) {
     if(w2uiRespData.status === 200){  
         outresp['status'] = 'success'
         outresp['dataresponse'] = w2uiRespData
-    } else if(w2uiRespData.status === 1290.100){ 
+    } else if(w2uiRespData.status === FORM_CODE){
+        w2uiRespData.status = 200 
+        outresp['status'] = 'success'
+        outresp['dataresponse'] = w2uiRespData
+        outresp['record'] = w2uiRespData.output.record
+    } else if(w2uiRespData.status === GRID_CODE){ 
         w2uiRespData.status = 200
         outresp['status'] = 'success'
         outresp['dataresponse'] = w2uiRespData
