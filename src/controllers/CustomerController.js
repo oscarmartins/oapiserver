@@ -90,7 +90,43 @@ const instance = {
     var outdata = utils.resultOutput.resultOutputDataOk({})
     try {
       if (instance.tokenRequestVerify(payload)) {
-        
+        const {user, fields} = payload.REQ_INPUTS
+        if (instance.customerPolicy(fields)) {
+          if (!user._id) {
+            throw new Error('User ID not valid')
+          }
+          if (!user.email) {
+            throw new Error('User EMAIL not valid')
+          }
+          if (!(await fetchUserByEmail(user._id, user.email))) {
+            throw new Error('User not found')
+          }
+          if (!fields) {
+            throw new Error('Customer fields not found')
+          }
+          var locCustomer = await fetchCustomer(user)
+          var updresult = null
+          if (locCustomer) {
+            locCustomer.dateUpdated = Date.now()
+            Object.keys(fields).forEach((key) => {
+              const value = fields[key] || null
+              locCustomer[key] = value
+            })
+          } else {
+            const _customer = CUSTOMER()
+            Object.keys(fields).forEach((key) => {
+              const value = fields[key] || null
+              _customer[key] = value
+            })
+            locCustomer = new Customer(_customer)
+            locCustomer.user_id = user._id
+            locCustomer.dateCreated = Date.now()
+            locCustomer.dateUpdated = Date.now()
+          }
+          updresult = await locCustomer.save(true)
+          outdata.success = 'Customer updated'
+          outdata.data = updresult
+        }
       }
     } catch (err) {
       if (err) {
