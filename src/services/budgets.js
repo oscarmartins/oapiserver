@@ -11,7 +11,7 @@ const BulkSMS = require('../utils/BulkSMS')
 const resultOutput = require('../utils/Utils')['resultOutput']
 const getClientIp = require('../utils/Utils')['ipMiddleware']['getClientIp']
 const {budgets} = require('../models')
-const emailsafecleanpt = require('/opt/orccontext')['email_safeclean_pt']
+const emailsafecleanpt = require('/opt/orccontext')['email_safeclean_pt_ssl']
 
 const BUDGET_CALLBACK = 10
 const BUDGET_FORM = 20

@@ -1,5 +1,6 @@
 const mongodb = require('mongodb')
 const budgetsService = require('./budgets')
+
 function MongoDao(mongoUri, dbname) {
     var _this = this;
     var options = {
@@ -77,5 +78,57 @@ async function sendReport (db, begin, end) {
         }
         budgetsService.sendEmailOndemand(result)
     })  
+}
+
+
+function alternativeSendemail () {
+
+    const nodemailer = require('nodemailer')
+    const emailsafecleanpt = require('/opt/orccontext')['email_safeclean_pt']
+
+    let message = {
+        to: 'geral@safeclean.pt',
+        subject: 'teste local',
+        html: 'teste local'
+    };
+    
+
+async function createTransport() {
+    return nodemailer.createTransport({
+      host: 'smtp-pt.securemail.pro',
+      //port: emailsafecleanpt.port,
+      //secure: emailsafecleanpt.secure, // true for 465, false for other ports
+      port: 465,
+      secure: true,
+      auth: {
+        user: emailsafecleanpt.user, // generated ethereal user
+        pass: emailsafecleanpt.pass // generated ethereal password
+      }
+    })
+}
+
+    let transporter = await createTransport().then(function(tporter){
+        if (tporter) {
+          message.from = emailsafecleanpt.user
+          return tporter.sendMail(message).then(function (info) {
+            var log = `Message sent: ${info.messageId} - `
+            log += `Preview URL: ${nodemailer.getTestMessageUrl(info)}`
+            console.log(log)
+            return log
+          }).catch(function (error) {
+            let maillogerror = '*** email error logger ***\n'       
+            maillogerror += error
+            maillogerror += '\n'
+            maillogerror += 'message= ' + JSON.stringify(message)
+            console.log(maillogerror)
+            return error
+          })
+        } else {
+          return  console.log('nada a fazer')
+        }   
+    }).catch(function (err) {
+        console.log(err)
+        return err
+    })
 }
 
