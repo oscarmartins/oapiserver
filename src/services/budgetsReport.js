@@ -75,7 +75,7 @@ async function sendReport (db, begin, end) {
         for (let u = 0; u < result.length; u++) {
             console.log(`send budget (since ${begin} to ${end}) / ${result[u].budgetEmail} - ${result[u].dateCreated}`)
         }
-        await budgetsService.sendEmailOndemand(result)
+        budgetsService.sendEmailOndemand(result)
     })  
 }
 
