@@ -80,19 +80,6 @@ async function sendReport (db, begin, end) {
     })  
 }
 
-
-function alternativeSendemail () {
-
-    const nodemailer = require('nodemailer')
-    const emailsafecleanpt = require('/opt/orccontext')['email_safeclean_pt']
-
-    let message = {
-        to: 'geral@safeclean.pt',
-        subject: 'teste local',
-        html: 'teste local'
-    };
-    
-
 async function createTransport() {
     return nodemailer.createTransport({
       host: 'smtp-pt.securemail.pro',
@@ -106,6 +93,17 @@ async function createTransport() {
       }
     })
 }
+
+async function alternativeSendemail () {
+
+    const nodemailer = require('nodemailer')
+    const emailsafecleanpt = require('/opt/orccontext')['email_safeclean_pt']
+
+    let message = {
+        to: 'geral@safeclean.pt',
+        subject: 'teste local',
+        html: 'teste local'
+    };
 
     let transporter = await createTransport().then(function(tporter){
         if (tporter) {
