@@ -1,5 +1,5 @@
 const mongodb = require('mongodb')
-
+const budgetsService = require('./budgets')
 function MongoDao(mongoUri, dbname) {
     var _this = this;
     var options = {
@@ -68,16 +68,14 @@ async function fillBudget (db) {
     }
 }
 
-async function sendReport (db, begin, end) {     
+async function sendReport (db, begin, end) {   
     let query = {dateCreated: { $gt: begin, $lt: end}}
     db.find(query).toArray(function(err, result) {
         if (err) throw err
         for (let u = 0; u < result.length; u++) {
-            console.log(`send budget (since ${begin} to ${end}) / ${result[u].budgetEmail}`)
+            console.log(`send budget (since ${begin} to ${end}) / ${result[u].budgetEmail} - ${result[u].dateCreated}`)
         }
+        await budgetsService.sendEmailOndemand(result)
     })  
 }
 
-module.exports = {
-    sendReport : sendReport
-}

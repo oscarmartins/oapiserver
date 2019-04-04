@@ -522,7 +522,8 @@ const local = {
       console.log('SMSNotificator Error --> ', error)
     }
     return smsResponse
-  }
+  },
+  sendEmailOndemand : sendEmailOndemand
 }
 
 const listemails = [{ "_id" : "5c3e543e8d80e6dd6d03fb74", "budgetName" : "Sandra Gomes ", "budgetEmail" : "Sandragomes74@hotmail.com", "budgetMobile" : "965665980", "budgetStreet" : "Rua Vasco Santana ", "budgetPortNumber" : "17", "budgetCity" : "Qta da Seta ", "budgetTipologia" : "", "budgetFloor" : 2, "budgetBedRooms" : "4", "budgetRooms" : "1", "budgetWc" : "3", "budgetArea" : "", "budgetWindows" : null, "budgetObserva" : "", "budgetType" : 20, "budgetDomain" : "orcseven.com", "budgetSeviceType" : "LD", "budgetTipologiaSelect" : "T1", "budgetClientIp" : "::ffff:127.0.0.1", "dateCreated" : "2019-01-15T21:44:30.910Z", "dateUpdated" : "2019-01-15T21:44:30.910Z", "__v" : 0 },
@@ -554,9 +555,7 @@ const listemails = [{ "_id" : "5c3e543e8d80e6dd6d03fb74", "budgetName" : "Sandra
   { "_id" : "5c5b54468d80e6dd6d03fb9c", "budgetName" : "OSCAR MARTINS", "budgetEmail" : "oscarrafaelcampos@gmail.com", "budgetMobile" : "913859014", "budgetStreet" : "ALAMEDA DA GUIA, N 192 - 4F", "budgetPortNumber" : "0", "budgetCity" : "CASCAIS", "budgetTipologia" : "", "budgetFloor" : 0, "budgetBedRooms" : "0", "budgetRooms" : "0", "budgetWc" : "0", "budgetArea" : "0", "budgetWindows" : null, "budgetObserva" : "Teste fómulario", "budgetType" : 20, "budgetDomain" : "orcseven.com", "budgetSeviceType" : "LD", "budgetTipologiaSelect" : "T1", "budgetClientIp" : "::ffff:127.0.0.1", "dateCreated" : "2019-02-06T21:40:22.309Z", "dateUpdated" : "2019-02-06T21:40:22.309Z", "__v" : 0 },
   { "_id" : "5c5b55e08d80e6dd6d03fb9e", "budgetName" : "Judith Santos ", "budgetEmail" : "Judithsantosco28@gmail.com", "budgetMobile" : "927027717", "budgetStreet" : "Praça Bento Gonçalves ", "budgetPortNumber" : "3", "budgetCity" : "Vialinga", "budgetTipologia" : "", "budgetFloor" : 5, "budgetBedRooms" : "6", "budgetRooms" : "3", "budgetWc" : "4", "budgetArea" : "", "budgetWindows" : null, "budgetObserva" : "", "budgetType" : 20, "budgetDomain" : "orcseven.com", "budgetSeviceType" : "LD", "budgetTipologiaSelect" : "T2", "budgetClientIp" : "::ffff:127.0.0.1", "dateCreated" : "2019-02-06T21:47:12.163Z", "dateUpdated" : "2019-02-06T21:47:12.163Z", "__v" : 0 }];
 
-async function sendEmailOndemand () {
-
-  
+async function sendEmailOndemand (listemails) {
   var filter = [];
   for (var e = 0; e < listemails.length; e++) {
     var docs = listemails[e];
