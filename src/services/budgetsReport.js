@@ -19,7 +19,7 @@ async function main() {
     const mongoDao = await new MongoDao('mongodb://localhost:27017', 'orcadmin')
     const budgets = mongoDao.dbConnection.collection('budgets')
     //await fillBudget(budgets)
-    await sendReport(budgets, new Date('2019-03-24'), new Date('2019-05-01'))
+    await sendReport(budgets, new Date('2019-05-15'), new Date('2019-05-23'))
 }
 
 main();
