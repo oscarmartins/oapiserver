@@ -123,8 +123,8 @@ const instance = {
         viewController['server'] = {
             context: 'w2ui',
             local_server_path: 'http://localhost:8081/orcv2',
-            remote_server_path : 'https://orcseven.com/api/orcv2',
-            serverUrlApi: 'https://orcseven.com/api/orcv2'
+            remote_server_path : 'https://oscarmartins.pt/api/orcv2',
+            serverUrlApi: 'https://oscarmartins.pt/api/orcv2'
         }
 
         viewController['ApiPolicy'] = orcApiController.ApiPolicy

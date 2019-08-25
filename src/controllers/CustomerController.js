@@ -90,43 +90,7 @@ const instance = {
     var outdata = utils.resultOutput.resultOutputDataOk({})
     try {
       if (instance.tokenRequestVerify(payload)) {
-        const {user, fields} = payload.REQ_INPUTS
-        if (instance.customerPolicy(fields)) {
-          if (!user._id) {
-            throw new Error('User ID not valid')
-          }
-          if (!user.email) {
-            throw new Error('User EMAIL not valid')
-          }
-          if (!(await fetchUserByEmail(user._id, user.email))) {
-            throw new Error('User not found')
-          }
-          if (!fields) {
-            throw new Error('Customer fields not found')
-          }
-          var locCustomer = await fetchCustomer(user)
-          var updresult = null
-          if (locCustomer) {
-            locCustomer.dateUpdated = Date.now()
-            Object.keys(fields).forEach((key) => {
-              const value = fields[key] || null
-              locCustomer[key] = value
-            })
-          } else {
-            const _customer = CUSTOMER()
-            Object.keys(fields).forEach((key) => {
-              const value = fields[key] || null
-              _customer[key] = value
-            })
-            locCustomer = new Customer(_customer)
-            locCustomer.user_id = user._id
-            locCustomer.dateCreated = Date.now()
-            locCustomer.dateUpdated = Date.now()
-          }
-          updresult = await locCustomer.save(true)
-          outdata.success = 'Customer updated'
-          outdata.data = updresult
-        }
+        
       }
     } catch (err) {
       if (err) {
@@ -157,46 +121,24 @@ const instance = {
       return outdata
     },
     updateCustomerProfile : async function (payload) {
-      const {user, fields} = payload.REQ_INPUTS
-        if (!fields) {
-          throw new Error('Customer fields not found')
-        }
-        if (instance.customerPolicy(fields)) {
-          if (!user) {
-            throw new Error('Customer user not found')
-          }
-          if (!user._id) {
-            throw new Error('User ID not valid')
-          }
-          if (!user.email) {
-            throw new Error('User EMAIL not valid')
-          }
-          if (!(await fetchUserByEmail(user._id, user.email))) {
-            throw new Error('User not found')
-          }
-          var locCustomer = await fetchCustomer(user)
-          var updresult = null
-          if (locCustomer) {
-            locCustomer.dateUpdated = Date.now()
-            Object.keys(fields).forEach((key) => {
-              const value = fields[key] || null
-              locCustomer[key] = value
-            })
+      var outdata = utils.resultOutput.resultOutputDataOk({})
+      try {
+        const res = await _updateCustomerProfile(payload, outdata)
+      } catch (err) {
+        if (err) {
+          if (err.name === 'MongoError' && err.code === instance.options.onAccountValidationCode) {
+            const fieldName = err.errmsg.substring(err.errmsg.lastIndexOf('index:') + 7, err.errmsg.lastIndexOf('_1'))
+            outdata.error = `O Campo ${fieldName} está registado em outra conta. `
           } else {
-            const _customer = CUSTOMER()
-            Object.keys(fields).forEach((key) => {
-              const value = fields[key] || null
-              _customer[key] = value
-            })
-            locCustomer = new Customer(_customer)
-            locCustomer.user_id = user._id
-            locCustomer.dateCreated = Date.now()
-            locCustomer.dateUpdated = Date.now()
+            outdata.error = err.message
           }
-          updresult = await locCustomer.save(true)
-          outdata.success = 'Customer updated'
-          outdata.data = updresult
+        } else {
+          outdata.error = 'erro desconhecido'
         }
+        outdata.iook = false
+        outdata.data = null
+      }
+      return outdata
     }
   }
 }
@@ -222,8 +164,45 @@ async function _fechCustomerProfile (payload, outdata) {
   return outdata        
 }
 
-async function _updateCustomerProfile () {
-  
+async function _updateCustomerProfile (payload, outdata) {
+  const {user, fields} = payload
+  if (!fields) {
+    throw new Error('Customer fields not found')
+  }
+  if (instance.customerPolicy(fields)) {
+    if (!user._id) {
+      throw new Error('User ID not valid')
+    }
+    if (!user.email) {
+      throw new Error('User EMAIL not valid')
+    }
+    if (!(await fetchUserByEmail(user._id, user.email))) {
+      throw new Error('User not found')
+    }
+    
+    var locCustomer = await fetchCustomer(user)
+    var updresult = null
+    if (locCustomer) {
+      locCustomer.dateUpdated = Date.now()
+      Object.keys(fields).forEach((key) => {
+        const value = fields[key] || null
+        locCustomer[key] = value
+      })
+    } else {
+      const _customer = CUSTOMER()
+      Object.keys(fields).forEach((key) => {
+        const value = fields[key] || null
+        _customer[key] = value
+      })
+      locCustomer = new Customer(_customer)
+      locCustomer.user_id = user._id
+      locCustomer.dateCreated = Date.now()
+      locCustomer.dateUpdated = Date.now()
+    }
+    updresult = await locCustomer.save(true)
+    outdata.success = 'Customer updated'
+    outdata.data = updresult
+  }
 }
 
 module.exports = instance

@@ -97,7 +97,7 @@ async function executeService (oap) {
     try {        
         if (oap) {
             Object.assign(orcapicontroller,oap);
-            const {record, cmd, limit, offset, selected} = orcapicontroller.main.httpRequest.body;
+            const {record, cmd, limit, offset, selected, name} = orcapicontroller.main.httpRequest.body;
             
             this.checkAuthorizationTest = await checkAuthorization();
             
@@ -343,6 +343,7 @@ async function executeService (oap) {
                 }
                 const customerController = require('../controllers/CustomerController')
                 let customer = null
+                let message = ''
                 if (cmd === SAVE || cmd === GET) {
                     customer = await customerController.nohttp.fechCustomerProfile({
                         _id: this.checkAuthorizationTest._id,
@@ -350,28 +351,38 @@ async function executeService (oap) {
                     });
                     if (customer.iook) {
                         if (cmd === GET) {
-                            const _data = {
-                                status: FORM_CODE,
-                                output: {
-                                    "record": {
-                                        firstName: customer.firstName,
-                                        lastName: customer.lastName,
-                                        gender: customer.gender,
-                                        birthDate: customer.birthDate,
-                                        nid: customer.nid
-                                    }
-                                }
-                              }
-                            w2uiRespData = _data
+                            //no msg
                         } else if (cmd === SAVE) {
-                        
+                            customer = await saveAndUpateCustomer (customerController, this, record);
+                            message = 'Perfil atualizado com sucesso.'
                         }
                     } else {
                         if (cmd === GET) {
                             throw new Error('Ainda não atualizou os seus dados!')
                         } else if (cmd === SAVE) {
-                        
+                            customer = await saveAndUpateCustomer (customerController, this, record);
+                            message = 'Perfil atualizado com sucesso.'
                         }
+                    }
+                    if (customer.iook) {
+                        const _data = {
+                            status: FORM_CODE,
+                            message: message,
+                            output: {
+                                "name" : name || '',
+                                "record": {
+                                    firstName: customer.data.firstName,
+                                    lastName: customer.data.lastName,
+                                    gender: customer.data.gender,
+                                    birthDate: customer.data.birthDate,
+                                    mobileNumber: customer.data.mobileNumber,
+                                    email: customer.data.email
+                                }
+                            }
+                          }
+                        w2uiRespData = _data
+                    } else {
+                        throw new Error(customer.error)
                     }
                 } else {
                     w2uiRespData.message = cmd + '  ' + ERROR_MESSAGE_CMD_NOT_IMPLEMENTED
@@ -400,7 +411,9 @@ async function executeService (oap) {
         w2uiRespData.status = 200 
         outresp['status'] = 'success'
         outresp['dataresponse'] = w2uiRespData
+        outresp['name'] = w2uiRespData.output.name || ''
         outresp['record'] = w2uiRespData.output.record
+        outresp['message'] = w2uiRespData.message || ''
     } else if(w2uiRespData.status === GRID_CODE){ 
         w2uiRespData.status = 200
         outresp['status'] = 'success'
@@ -464,6 +477,19 @@ function resolveW2uiResponses (records) {
 const instance = {
     options:apiPolicy,
     executeService: executeService   
+}
+
+async function saveAndUpateCustomer (customerController, sessionData, record) {
+    var user = {
+        _id: sessionData.checkAuthorizationTest._id,
+        email: sessionData.checkAuthorizationTest.email
+    };
+    var fields = record;
+    var customer = await customerController.nohttp.updateCustomerProfile({user, fields});
+    if (customer) {
+        var test = 0;
+    }
+    return customer
 }
 
 module.exports = instance

@@ -35,7 +35,8 @@ const OPTIONS = {
     root: 996699,
     budgetsRequest: 1000,
     w2ui: 9999,
-    paluticars: 155015
+    paluticars: 155015,
+    crmsys: 202020
   },
   EMAIL_MANAGER:{
     fetchProfiles: 2018706100,
@@ -43,6 +44,11 @@ const OPTIONS = {
     new: 2018706300,
     update: 2018706400,
     remove: 2018706500
+  },
+  crmsys: {
+    sidebar: 10100,
+    addUserGroup: 11100,
+    allUserGroup: 11200
   }
 }
 
