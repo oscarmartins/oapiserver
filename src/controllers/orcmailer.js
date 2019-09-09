@@ -62,7 +62,7 @@ var message = {
   html: '<p>HTML version of the message</p>'
 }
 */
-const ACCOUNT_PROFILE = 'info_orc-project.com'
+const ACCOUNT_PROFILE = 'oscarafael_gmail'
 module.exports = {
   accountProfile: null,
   sendMail: async function (message) {
@@ -92,7 +92,9 @@ module.exports = {
         console.log('Message sent: %s', info.messageId)
         console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info))
       })
-    })
+    }).catch(function (arg) {
+      console.log('Erro ao enviar email: ' + JSON.stringify(arg))
+    });
     return true
   }
 }

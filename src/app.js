@@ -8,6 +8,7 @@ const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
 const passport = require('./passport')
 const app = express()
+const jwtSecret = require('/opt/orccontext')['jwtSecret']
 app.use(passport.initialize())
 mongoose.connect('mongodb://localhost:27017/orcadmin', {useNewUrlParser:true})
 mongoose.set('useCreateIndex', true)
@@ -16,7 +17,7 @@ app.use(bodyParser.json({limit: "50mb"}))
 app.use(cors())
 
 app.use(session({
-  secret: 'access_token',
+  secret: jwtSecret,
   resave: true,
   saveUninitialized: true,
   store: new MongoStore({mongooseConnection: mongoose.connection}),

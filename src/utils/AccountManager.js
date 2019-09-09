@@ -5,7 +5,7 @@ const uuid = require('uuid')
 const UserAccountHelper = require('../utils/UserAccountHelper')
 const OPTIONS = require('../policies/ApiPolicy')
 
-EmailSender.accountProfile = 'accounts_notificator'
+EmailSender.accountProfile = 'oscarafael_gmail'
 
 function resultOutput (iook, success, error, data) {
   console.log('AccountManager DEBUG begin', '\niook = ' + iook, ', success = ' + success, ', error = ' + error, ', data = ' + data, '\nAccountManager DEBUG end')
