@@ -23,7 +23,7 @@
     "joi": "latest",
     "jsonwebtoken": "^8.5.1",
     "knex": "latest",
-    "mongoose": "^4.13.19",
+    "mongoose": "^5.7.5",
     "morgan": "latest",
     "nodemailer": "^4.7.0",
     "nodemon": "^1.19.2",
