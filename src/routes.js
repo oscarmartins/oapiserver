@@ -6,8 +6,18 @@ const isAuthenticated = require('./policies/isAuthenticated')
 const MailerController = require('./controllers/MailerController')
 const ApiController = require('./controllers/ApiController')
 const ApiEndpoint = require('./controllers/endpoint')
+const SysAccountController = require('./controllers/SysAccountController')
 
 module.exports = (app) => {
+
+  /** SysApp Routes @begin **/
+
+  app.post('/sign-up', SysAccountController.execute)
+  app.post('/sign-in', SysAccountController.execute)
+  app.post('/account-verification', SysAccountController.execute)
+
+  /** SysApp Routes @end **/
+
   app.post('/register', AccountController.execute)
   app.post('/login', AccountController.execute)
   app.post('/logout', AccountController.execute)

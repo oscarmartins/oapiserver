@@ -111,8 +111,6 @@ module.exports = {
       output.isok = false
       switch (error.details[0].context.key) {
         case 'email':
-          output.error = error.details[0].message
-          break
         case 'password':
           output.error = error.details[0].message
           break

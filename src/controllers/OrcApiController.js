@@ -6,12 +6,12 @@ const ERROR_MISSING_REQ_PAR_04 = 'Error [Http] [missing httpRequest]'
 const ERROR_MISSING_REQ_PAR_05 = 'Error [Http] [missing httpResponse]'
 
 const main = this
-main['httpRequest'] = null
-main['httpResponse'] = null
-main['next'] = null
-main['REQ_CONTEX'] = 0
-main['REQ_ACTION'] = 0
-main['REQ_INPUTS'] = {}
+main.httpRequest = null, 
+main.httpResponse = null,
+main.next = null,
+main.REQ_CONTEX = 0,
+main.REQ_ACTION = 0,
+main.REQ_INPUTS = {};
 
 function init (req, res, next) {
   main.httpRequest = req
@@ -22,15 +22,15 @@ function init (req, res, next) {
 
 async function preparams () {
   let msg = null
-  if (!main.httpRequest) { msg = ERROR_MISSING_REQ_PAR_04 }
-  if (!main.httpResponse) { msg = ERROR_MISSING_REQ_PAR_05 }
+  if (typeof main.httpRequest === 'undefined') { msg = ERROR_MISSING_REQ_PAR_04 }
+  if (typeof main.httpResponse  === 'undefined') { msg = ERROR_MISSING_REQ_PAR_05 }
 
-  const body = main.httpRequest.body
-  const {REQ_CONTEX, REQ_ACTION, REQ_INPUTS} = body
+  const {REQ_CONTEX, REQ_ACTION, REQ_INPUTS} = main.httpRequest.body
 
-  if (!REQ_CONTEX) { msg = ERROR_MISSING_REQ_PAR_01 }
-  if (!REQ_ACTION) { msg = ERROR_MISSING_REQ_PAR_02 }
-  if (!REQ_INPUTS) { msg = ERROR_MISSING_REQ_PAR_03 }
+  if (typeof REQ_CONTEX === 'undefined') { msg = ERROR_MISSING_REQ_PAR_01 }
+  if (typeof REQ_ACTION === 'undefined') { msg = ERROR_MISSING_REQ_PAR_02 }
+  if (typeof REQ_INPUTS === 'undefined') { msg = ERROR_MISSING_REQ_PAR_03 }
+
   if (msg) { return {isok: false, error: msg} }
 
   main.REQ_CONTEX = REQ_CONTEX

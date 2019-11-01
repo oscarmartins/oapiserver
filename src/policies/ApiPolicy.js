@@ -36,7 +36,8 @@ const OPTIONS = {
     budgetsRequest: 1000,
     w2ui: 9999,
     paluticars: 155015,
-    crmsys: 202020
+    crmsys: 202020,
+    sysapp: 606060
   },
   EMAIL_MANAGER:{
     fetchProfiles: 2018706100,
@@ -49,6 +50,10 @@ const OPTIONS = {
     sidebar: 10100,
     addUserGroup: 11100,
     allUserGroup: 11200
+  },
+  sysapp: {
+    signup: 60100,
+    signin: 60200,
   }
 }
 
