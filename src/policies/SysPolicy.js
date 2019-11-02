@@ -2,11 +2,11 @@ const Joi = require('joi')
 const outputOpt = function (isok, error, errors) {
     return {isok: isok, error: error, errors: errors}
 }
-var output = null;
 const schemas = {
     signup: {
         name: Joi.string().required(),
         email: Joi.string().email({ minDomainAtoms: 2 }).required(),
+        mobile: Joi.string().min(9).max(14),
         secret: Joi.string().regex(new RegExp('^[a-zA-Z0-9]{8,32}$')).required().options({
             language: {
               string: {

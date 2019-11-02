@@ -18,6 +18,9 @@ module.exports = {
                         case ApiPolicy.sysapp.signin:
                             response = await syservices.signin(main)
                             break
+                        case ApiPolicy.sysapp.seedauxmodels:
+                            response = await syservices.seedauxmodels(main)
+                            break
                     }
                     if (response) {
                         httpstatus = response.iook ? 200 : 400

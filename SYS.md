@@ -12,7 +12,7 @@
         id: long,
         name: string,
         email: string,
-        mobile: number
+        mobile: string
         secret: string,
         type: number,
         dateCreated: date,
@@ -55,14 +55,25 @@
 
 + SignUp / create New User And Account @begin
         /** insert new sys user: **/
-        <request: data: {{name: 'OSCAR RAFAEL', email: 'oscar@email.com', secret: 'rT444dF0', type: 1000}}>
-        > SysUser(data);    
+        <request: data: {{name: 'OSCAR RAFAEL', email: 'oscar@email.com', secret: 'rT444dF0'}}>
+        < data.user: 500 
+        > insert SysUser(data);    
         < sysUserId: 1572476377213 (SysUser.id)
         /** insert new sys account **/
-        < generateToken(): 'F9ZZ-S5TF-1AWE-P20X'
-        > SysAccounts({sysUserId: 1572476377213, status: 200, token: 'F9ZZ-S5TF-1AWE-P20X', appContext: 1572475699084});
+        - block@begin> createAccount 
+            < generateToken(): 'F9ZZ-S5TF-1AWE-P20X'
+            > insert SysAccounts({sysUserId: 1572476377213, status: 200, token: 'F9ZZ-S5TF-1AWE-P20X', appContext: 1572475699084});
+        - block@end> createAccount 
+        /** insert new sys account **/
         <sent-email: sysUserId, 'success registation'>  
         <response: 200, 'success registation'>
++ SignIn / new session @begin
+        <request: data: {email: 'oscar@email.com', secres: 'rT444dF0'}>
+        > query select SysUser @by (data.email && data.secret)
+        < goodLogin: true
+        > #IF goodLogin 
+            <response: 200, {sessionData}>
+        < #ELSE <response: 401, 'Unauthorized'> #ENDELSE
 + Account Status Verification @begin
         <@object function accountStatusVerification: sysAccount (
             > #IF (sysAccount.status == 200) // account onValidation
@@ -94,13 +105,16 @@
             < #ELSE
                 <response: accountVerification.status, accountVerification.expect>
             < #ENDIF
-+ SignIn / new session @begin
-        <request: data: {email: 'oscar@email.com', secres: 'rT444dF0'}>
-        > query select SysUser @by (data.email && data.secret)
-        < goodLogin: true
-        > #IF goodLogin 
-            <response: 200, {sessionData}>
-        < #ELSE <response: 401, 'Unauthorized'> #ENDELSE
 
-
-
+- Api files
+    {
+        controller: 'SysAccountController',
+        services: 'sysServices',
+        policies: 'SysPolicy',
+        models: ['SysAccounts', 'SysUser', 'SysAppContext', 'SysAccountsStatus', 'SysUserTypes'],
+        gitmsg: '[Sys App - account manager 1s commit] [Oscar R.]'
+    }
+- Tasks
+    SignUp: Done. [Sys App - task signup finish] [Oscar R.]
+    SignIn: in develepment..
+    Account-Verification: in develepment..

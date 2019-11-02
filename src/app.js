@@ -11,7 +11,7 @@ const app = express()
 const jwtSecret = require('/opt/orccontext')['jwtSecret']
 app.use(passport.initialize())
 mongoose.Promise = global.Promise
-mongoose.connect('mongodb://localhost:27017/orcadmin', {useNewUrlParser:true})
+mongoose.connect('mongodb://localhost:27017/orcadmin', {useNewUrlParser:true, useUnifiedTopology: true})
 mongoose.set('useCreateIndex', true)
 app.use(morgan('combined'))
 app.use(bodyParser.json({limit: "50mb"}))

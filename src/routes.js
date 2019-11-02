@@ -15,6 +15,7 @@ module.exports = (app) => {
   app.post('/sign-up', SysAccountController.execute)
   app.post('/sign-in', SysAccountController.execute)
   app.post('/account-verification', SysAccountController.execute)
+  app.post('/auto-seed-aux-models', SysAccountController.execute)
 
   /** SysApp Routes @end **/
 
