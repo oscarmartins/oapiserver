@@ -7,6 +7,7 @@ const sysUserTypesSchema = new Schema({
   dateCreated: {type: Date},
   dateUpdated: {type: Date}
 })
+
 sysUserTypesSchema.pre('save', async function (next) {
   const $self = this
   if (!$self.isNew) {
@@ -15,4 +16,5 @@ sysUserTypesSchema.pre('save', async function (next) {
   $self.dateCreated = $self.dateUpdated = Date.now()
   return next()
 })
+
 module.exports = mongoose.model('SysUserTypes', sysUserTypesSchema)

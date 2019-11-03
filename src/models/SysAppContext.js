@@ -17,4 +17,5 @@ sysAppContextSchema.pre('save', async function (next) {
   return next()
   
 })
+
 module.exports = mongoose.model('SysAppContext', sysAppContextSchema)

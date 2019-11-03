@@ -68,8 +68,8 @@
         <sent-email: sysUserId, 'success registation'>  
         <response: 200, 'success registation'>
 + SignIn / new session @begin
-        <request: data: {email: 'oscar@email.com', secres: 'rT444dF0'}>
-        > query select SysUser @by (data.email && data.secret)
+        <request: data: {email: 'oscar@email.com', secret: 'rT444dF0'}>
+        > query select SysUser @by (data.email)
         < goodLogin: true
         > #IF goodLogin 
             <response: 200, {sessionData}>
@@ -116,5 +116,21 @@
     }
 - Tasks
     SignUp: Done. [Sys App - task signup finish] [Oscar R.]
-    SignIn: in develepment..
-    Account-Verification: in develepment..
+    SignIn: Done. [Sys App - task signin finish] [Oscar R.]
+    Account-Verification: Done. [Sys App - task validation finish] [Oscar R.]
+
+
+
+- Workflow Sys Account validation
+    > account status: 200
+        <change status account 300>
+            <send-email with token_account_code to user validation>
+    > account status: 300
+        <validate token_account_code>
+            <change status account 100>
+- Workflow Sys Account Status Actions
+    > account status: 300
+        <send-email with token_account_code to user validation>
+    > account status: 200
+        <validate token_account_code>
+            <change status account 100> 

@@ -9,6 +9,7 @@ const sysAccountsSchema = new Schema({
   dateCreated: {type: Date},
   dateUpdated: {type: Date}
 })
+
 sysAccountsSchema.pre('save', async function (next) {
   const $self = this
   if (!$self.isNew) {
@@ -17,4 +18,5 @@ sysAccountsSchema.pre('save', async function (next) {
   $self.dateCreated = $self.dateUpdated = Date.now()
   return next()
 })
+
 module.exports = mongoose.model('SysAccounts', sysAccountsSchema)

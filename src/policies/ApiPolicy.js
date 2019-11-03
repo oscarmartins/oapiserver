@@ -54,6 +54,7 @@ const OPTIONS = {
   sysapp: {
     signup: 60100,
     signin: 60200,
+    accountverification: 60300,
     seedauxmodels: 60400
   }
 }

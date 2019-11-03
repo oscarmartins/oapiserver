@@ -1,6 +1,8 @@
 const {SysAccounts, SysUser, SysAppContext, SysAccountsStatus, SysUserTypes} = require('../models')
 const sysPolicy = require('../policies/SysPolicy')
-const response = require('../utils/Utils')['resultOutput']
+const httpResponseUtils = require('../utils/Utils')
+const jwt = httpResponseUtils.jwtToken
+const response = httpResponseUtils.resultOutput
 const emailSender = require('../controllers/orcmailer')
 const uuid = require('uuid')
 
@@ -26,7 +28,12 @@ async function seedAuxModels (payload) {
         console.log(test.message)
         logger += '\n SysAppContext ' + test.message
     }
-    let datos = [{label: 'disabled', status: -100},{label: 'enable', status: 100},{label: 'onValidation', status: 200}]
+    let datos = [
+        {label: 'disabled', status: -100},
+        {label: 'enabled', status: 100},
+        {label: 'on_account_validation', status: 200},
+        {label: 'on_account_token_validation', status: 300}
+    ]
     datos.forEach( async function (tf) {
         localtmp = new SysAccountsStatus(tf)
         test = await localtmp.save().then(dbcallback).catch(dbcallback)
@@ -69,10 +76,9 @@ async function sendMail (to, subject, text, html) {
     }
     return false
 }
-
 async function createAccount (sysUserId, appContext) {
     //onValidation
-    const accountStatus = 2000 
+    const accountStatus = 200 
     const accountToken = tokenGenerator()
     const sysAccount = new SysAccounts({
         sysUserId: sysUserId,
@@ -82,11 +88,10 @@ async function createAccount (sysUserId, appContext) {
     })
     const result = await sysAccount.save().then((r) => r).catch((r) => r)
     if (result.errors) {
-        console.log(`Nao foi possivel criar a conta. ${result.errors}`)
+        console.log(`Unable to create account. ${result.errors}`)
     } 
     return response.resultOutputSuccess('New Account created success.')
 }
-
 async function signup (payload) {
     const validation = sysPolicy.signup(payload.REQ_INPUTS)
     if (validation.isok) {
@@ -107,10 +112,10 @@ async function signup (payload) {
                     if (msg) {
                         msg = msg.replace('index: ', '')
                         msg = msg.replace('_1 ', '')
-                        msg = `O campo "${msg}" já se encontra registado.`
+                        msg = `The field "${msg}" is already registered!`
                     } 
                 } else {
-                    msg = 'Não foi possivel criar um registo. Verifique os dados ou entre em contacto com o Administrador.'
+                    msg = 'Not possible to create a new register. Please check the data or contact admin.'
                 }
                 return response.resultOutputError(msg)    
             } else {
@@ -125,14 +130,14 @@ async function signup (payload) {
                 } else {
                     let to = user.email 
                     let subject = `Registration to ${appContext.label}`
-                    text = `Thanks for signing up at ${appContext.label}!\n`
+                    let text = `Thanks for signing up at ${appContext.label}!\n`
                     text += `Thanks, \n`
                     text += `The ${appContext.label} Team \n`
                     sendMail(to, subject, text)
                 }
                 /* Create Account @end*/
             }
-            return response.resultOutputSuccess('Registo foi concluído com sucesso. ')
+            return response.resultOutputSuccess('Registration has been successfully completed. ')
         } else {
             return response.resultOutputError(`app-context "${payload.REQ_CONTEX}" not registered.`)
         }
@@ -142,12 +147,190 @@ async function signup (payload) {
 }
 
 async function signin (payload) {
-    return response.resultOutputError(signin)
+    const validation = sysPolicy.signin(payload.REQ_INPUTS)
+    let msgerr = null
+    let jwttoken = null
+    if (validation.isok) {
+        const appContext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
+        if (appContext) {
+            const {email, secret} = payload.REQ_INPUTS
+            const result = await SysUser.findOne({email: email})
+            if (result && result.validPassword(secret)) {
+                console.log('good login!')
+                jwttoken = jwt.sessionToken({
+                    id: result.id,
+                    appContext: appContext.appContext
+                })
+            } else {
+                /*Unauthorized*/
+                msgerr = 'Login error. Wrong data.'
+            }
+        } else {
+            msgerr = 'An error has occurred. Try later.'
+        }
+    } else {
+        msgerr = validation.error
+    }
+    if (msgerr)
+        return response.resultOutputError(msgerr)      
+    return response.resultOutputDataOk({
+        message: 'Login has been successfully!',
+        token_session: jwttoken
+    })
+}
+
+/* 
+criteria = {
+    sysUserId: sysAccount.sysUserId, 
+    appContext: sysAccount.appContext
+} 
+*/
+async function accountStatusActions (criteria) {
+    const sysaccount = await SysAccounts.findOne(criteria)
+    const appcontext = await SysAppContext.findOne({appContext: criteria.appContext})
+    let outpreres = {
+        httpstatus: 200,
+        action: '',
+        msgerr: ''
+    }
+    switch (sysaccount.status) {
+        case 100:
+            outpreres.action = 'enabled'
+        break;
+        case 200:
+            outpreres.action = 'on_account_validation'
+        break;
+        case 300:
+            const user = await SysUser.findOne({_id: sysaccount.sysUserId})
+            if (user) {
+                let to = user.email 
+                let subject = `Account validation token code - ${appcontext.label}`
+                let html = `<p>We have sent you the verification code for your account.</p>`
+                html += `<p>You can copy and paste into the validation form the following code:</p>`
+                html += `<p><code style="margin-left: 100px;">${sysaccount.token}</code></p>`
+                html += `<p>Thanks,</p>`
+                html += `<p>The ${appcontext.label} Team</p>`
+                const hasSend = await sendMail(to, subject, null, html)
+                if (hasSend) {
+                    outpreres.action = 'on_account_token_validation'
+                } else {
+                    outpreres.httpstatus = 400
+                    outpreres.msgerr = `Fail sent email! error id: ${user._id} ${appcontext.label}.`
+                }
+            } else {
+                outpreres.httpstatus = 400
+                outpreres.msgerr = `User not found! id: ${sysaccount.sysUserId} ${appcontext.label}`
+            }
+        break;
+        case -100: 
+        default:
+            outpreres.httpstatus = 400
+            outpreres.action = 'disabled'
+        break;
+    }
+    return outpreres
+}
+
+async function updateAccountStatus (sysAccount, newStatus) {
+    const criteria = {sysUserId: sysAccount.sysUserId, appContext: sysAccount.appContext}
+    const query = {status: newStatus, dateUpdated: Date.now()}
+    if (newStatus === 100) query.token = tokenGenerator()
+    const update = await SysAccounts.updateOne(criteria, query)
+    if (update.ok && update.ok === 1 && update.nModified >= 1) {
+        const actions = await accountStatusActions(criteria)
+        return actions
+    } 
+    return null
+}
+
+async function accountStatusVerification (sysAccount, inputdata) {
+    const {token} = inputdata
+    let httpstatus = 400, expect, msgerr, tmpaux
+    switch (sysAccount.status) {
+        case 100:
+            httpstatus = 200
+            expect = 'enabled'
+            break;
+        case 200:
+            /** change  account status */
+            tmpaux = await updateAccountStatus(sysAccount, 300)
+            /*
+                action:"on_account_token_validation"
+                httpstatus:200
+            */
+            if (tmpaux) {
+                httpstatus = tmpaux.httpstatus
+                expect = tmpaux.action
+                msgerr = tmpaux.msgerr
+            }
+            break;
+        case 300:
+            if (typeof token === 'undefined') {
+                msgerr = 'Bad request. token field is required.'
+            } else {
+                if (token === sysAccount.token) {
+                    tmpaux = await updateAccountStatus(sysAccount, 100)
+                    if (tmpaux) {
+                        httpstatus = tmpaux.httpstatus
+                        expect = tmpaux.action
+                        msgerr = tmpaux.msgerr
+                    }
+                }
+            }
+            break;
+        case -100:
+        default:
+            httpstatus = 400
+            expect = 'disabled'
+            msgerr = 'Account disabled.'
+            break;
+    }
+    return {
+        httpstatus: httpstatus,
+        expect: expect,
+        msgerr: msgerr
+    }
+}
+
+async function accountverification (payload) {
+    let outputErr = null
+    const {token_session} = payload.REQ_INPUTS
+    /* (request context VS (query appContext) VS request token param) */
+    const reqappcontext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
+    if (reqappcontext) {
+        const {id, appContext} = jwt.tokenVerify(token_session)
+        if ((id && appContext) && (appContext === reqappcontext.appContext)) {
+            const sysaccount = await SysAccounts.findOne({sysUserId: id, appContext: appContext})
+            if (sysaccount) {
+                const preresponse = await accountStatusVerification(sysaccount, payload.REQ_INPUTS)
+                if (preresponse.httpstatus === 200) {
+                    let nextStage = {to: 'login'}
+                    console.log(`** Account Verification: expect:${preresponse.expect} vs 'enabled'`)
+                    if (preresponse.expect === 'enabled') {
+                        nextStage.to = 'dashboard'
+                    } else if (preresponse.expect === 'on_account_token_validation') {
+                        nextStage.to = 'account-validation'
+                    } 
+                    return response.resultOutputDataOk(nextStage)
+                } else {
+                    outputErr = preresponse.msgerr
+                }
+            } else {
+                outputErr = 'Bad Request parameters'
+            }
+        } else {
+            outputErr = 'Error, Account not found.'
+        }
+    } else {
+        outputErr = 'Error, No app context!'
+    }
+    return response.resultOutputError(outputErr) 
 }
 
 const _instances = {
     signup: signup,
     signin: signin,
+    accountverification: accountverification,
     seedauxmodels: seedAuxModels   
 };
 

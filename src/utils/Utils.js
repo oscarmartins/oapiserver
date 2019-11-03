@@ -35,6 +35,13 @@ function tokenVerify (token) {
   return false
 }
  */
+
+function sessionToken (user) {
+  return jwt.sign(user, config.authentication.jwtSecret, {
+      expiresIn: '30m'
+  })
+}
+
 function tokenRequestVerify (httpRequest) {
   return tokenVerify(httpRequest.headers.authorization)
 }
@@ -75,6 +82,7 @@ const INSTANCE = {
     resultOutputDataError: (data) => { return resultOutput(false, null, null, data) }
   },
   jwtToken: {
+    sessionToken: sessionToken,
     tokenVerify: token => { return tokenVerify(token) },
     tokenRequestVerify: httpRequest => { return tokenRequestVerify(httpRequest) }
   },
