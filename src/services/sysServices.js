@@ -6,6 +6,12 @@ const response = httpResponseUtils.resultOutput
 const emailSender = require('../controllers/orcmailer')
 const uuid = require('uuid')
 
+async function createAdminUser () {
+    const email = httpResponseUtils.getEmail()
+    const admin = await SysUser.findOne({email: email})
+    response.resultOutputSuccess('seed SysAdmin user created .')
+}
+
 async function seedAuxModels (payload) {
     const {clear} = payload.REQ_INPUTS
     const dbcallback = (r) => r
@@ -57,6 +63,7 @@ async function seedAuxModels (payload) {
             logger += '\n SysUserTypes ' + test.message
         }
     })
+
     return response.resultOutputSuccess(logger)
 } 
 

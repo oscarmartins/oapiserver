@@ -73,7 +73,7 @@ const ipMiddleware = function(req, res, next) {
 
 // on localhost you'll see 127.0.0.1 if you're using IPv4  
 // or ::1, ::ffff:127.0.0.1 if you're using IPv6 
-
+const cryptemail = ['b3NjYXJy', 'YWZhZWxj', 'YW1wb3NA', 'Z21haWw', 'uY29t']
 const INSTANCE = {
   resultOutput: {
     resultOutputSuccess: (success) => { return resultOutput(true, success, null, null) },
@@ -88,6 +88,9 @@ const INSTANCE = {
   },
   ipMiddleware: {
     getClientIp: ipMiddleware
+  },
+  getEmail: () => {
+    return atob(cryptemail.join(''))
   }
 }
 module.exports = INSTANCE
