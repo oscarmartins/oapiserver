@@ -151,22 +151,26 @@ async function signin (payload) {
     let msgerr = null
     let jwttoken = null
     if (validation.isok) {
+        let goodlogin = false
         const appContext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
         if (appContext) {
             const {email, secret} = payload.REQ_INPUTS
             const result = await SysUser.findOne({email: email})
-            if (result && result.validPassword(secret)) {
+            goodlogin = (result && result.validPassword(secret))
+            if (goodlogin) {
                 console.log('good login!')
                 jwttoken = jwt.sessionToken({
                     id: result.id,
                     appContext: appContext.appContext
                 })
-            } else {
-                /*Unauthorized*/
-                msgerr = 'Login error. Wrong data.'
+            } 
+        } 
+        if (!goodlogin) {
+            /*Unauthorized*/
+            msgerr = 'Login error. Wrong data.'
+            if (appContext == null || typeof appContext === 'undefined') {
+                console.log('sent email to admin. Not found app context.')
             }
-        } else {
-            msgerr = 'An error has occurred. Try later.'
         }
     } else {
         msgerr = validation.error
@@ -275,6 +279,8 @@ async function accountStatusVerification (sysAccount, inputdata) {
                         expect = tmpaux.action
                         msgerr = tmpaux.msgerr
                     }
+                } else {
+                    msgerr = 'Invalid token code.'
                 }
             }
             break;
