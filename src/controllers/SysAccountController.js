@@ -24,6 +24,9 @@ module.exports = {
                         case ApiPolicy.sysapp.accountverification:
                             response = await syservices.accountverification(main)
                             break
+                        case ApiPolicy.sysapp.requestaccountverificationtoken:
+                            response = await syservices.requestaccountverificationtoken(main)
+                            break
                     }
                     if (response) {
                         httpstatus = response.iook ? 200 : 400
