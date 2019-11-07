@@ -1,4 +1,5 @@
 const Joi = require('joi')
+
 const outputOpt = function (isok, error, errors) {
     return {isok: isok, error: error, errors: errors}
 }
@@ -52,6 +53,15 @@ function signin (inputs) {
 }
 
 module.exports = {
-    signup: signup,
-    signin: signin
+  signup: signup,
+  signin: signin,
+  ACCOUNT_STATUS_DISABLED: -100,
+  ACCOUNT_STATUS_ENABLED: 100,
+  ACCOUNT_STATUS_ON_VALIDATION: 200,
+  ACCOUNT_STATUS_ON_TOKEN_VALIDATION: 300,
+  USER_TYPE_TESTER: 3000,
+  USER_TYPE_BACK_OFFICE: 2000,
+  USER_TYPE_ADMIN: 1000,
+  USER_TYPE_USER: 500,
+  USER_TYPE_GUEST: 100
 }

@@ -53,8 +53,7 @@ async function seedAuxModels (payload) {
     let logger = 'Seed aux db models: '
     if (clear) {
         const loggerResult = function (dbname, r) {
-            console.log(dbname + ': ' +JSON.stringify(r))
-            logger += '\n ' + dbname + ': ' +JSON.stringify(r)
+            logger += '\n ' + dbname + ': ' + (typeof r === 'object' ? JSON.stringify(r) : r)
         }
         let del = await SysAppContext.deleteMany({}).then(dbcallback).catch(dbcallback)
         loggerResult('SysAppContext', del)
@@ -70,10 +69,10 @@ async function seedAuxModels (payload) {
         logger += '\n SysAppContext ' + test.message
     }
     let datos = [
-        {label: 'disabled', status: -100},
-        {label: 'enabled', status: 100},
-        {label: 'on_account_validation', status: 200},
-        {label: 'on_account_token_validation', status: 300}
+        {label: 'disabled', status: sysPolicy.ACCOUNT_STATUS_DISABLED},
+        {label: 'enabled', status: sysPolicy.ACCOUNT_STATUS_ENABLED},
+        {label: 'on_account_validation', status: sysPolicy.ACCOUNT_STATUS_ON_VALIDATION},
+        {label: 'on_account_token_validation', status: sysPolicy.ACCOUNT_STATUS_ON_VALIDATION}
     ]
     datos.forEach( async function (tf) {
         localtmp = new SysAccountsStatus(tf)
@@ -84,11 +83,11 @@ async function seedAuxModels (payload) {
         }
     })
     datos = [
-        {label: 'admin', type: 1000},
-        {label: 'user', type: 500},
-        {label: 'guest', type: 100},
-        {label: 'back-office', type: 2000},
-        {label: 'tester', type: 3000}
+        {label: 'admin', type: sysPolicy.USER_TYPE_ADMIN},
+        {label: 'user', type: sysPolicy.USER_TYPE_USER},
+        {label: 'guest', type: sysPolicy.USER_TYPE_GUEST},
+        {label: 'back-office', type: sysPolicy.USER_TYPE_BACK_OFFICE},
+        {label: 'tester', type: sysPolicy.USER_TYPE_TESTER}
     ]
     datos.forEach( async function (tf) {
         localtmp = new SysUserTypes(tf)
