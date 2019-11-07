@@ -57,7 +57,7 @@ const OPTIONS = {
     accountverification: 60300,
     seedauxmodels: 60400,
     requestaccountverificationtoken: 60500,
-    recoveryaccount: 60600
+    accountrecovery: 60600
   }
 }
 

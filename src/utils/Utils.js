@@ -43,27 +43,31 @@ function sessionToken (user) {
   })
 }
 
-function tokenRequestVerify (httpRequest) {
-  return tokenVerify(httpRequest.headers.authorization)
-}
-function tokenVerify (token) {
-  let tokenIOOK = false
-  let testStr = null
+function _tokenVerify (token) {
+  let tokenIOOK = false, testStr = null
   try {
-    testStr = token.trim().replace('Bearer', '').trim()
-    tokenIOOK = jwt.verify(testStr, config.authentication.jwtSecret, function (err, decoded) {
-      if (err) {
-        throw err
-      }
+    if (typeof token === 'undefined' || token.length === 0)
+      throw 'Error, token undefined.'
+    token = token.trim().replace('Bearer', '').trim()
+    tokenIOOK = jwt.verify(token, config.authentication.jwtSecret, function (err, decoded) {
+      if (err) throw err
       return decoded
     })
-  } catch (error) {
-    if (error) {
-      console.log('tokenVerify -> ', error.message)
-    }
-    tokenIOOK = false
+  } catch (err) {
+    if (err) testStr = err.message
   }
-  return tokenIOOK
+  return {
+    valid: tokenIOOK,
+    errmsg: testStr
+  }
+}
+
+function tokenVerify (token) {
+  return _tokenVerify(token).valid
+}
+
+function tokenRequestVerify (httpRequest) {
+  return tokenVerify(httpRequest.headers.authorization)
 }
 
 // inside middleware handler 
@@ -85,7 +89,8 @@ const INSTANCE = {
   jwtToken: {
     sessionToken: sessionToken,
     tokenVerify: token => { return tokenVerify(token) },
-    tokenRequestVerify: httpRequest => { return tokenRequestVerify(httpRequest) }
+    tokenRequestVerify: httpRequest => { return tokenRequestVerify(httpRequest) },
+    _tokenVerify: token => { return _tokenVerify(token) }
   },
   ipMiddleware: {
     getClientIp: ipMiddleware

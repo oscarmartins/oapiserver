@@ -1,12 +1,11 @@
-const orcapicontroller = require('./OrcApiController')
+const {init, ApiPolicy, preparams, responseSender} = require('./OrcApiController')
 const syservices = require('../services/sysServices')
 module.exports = {
     async execute (req, res, next) {
         try {
             console.log('Sys Account Management: on execute')
-            const main = orcapicontroller.init(req, res, next)
-            const ApiPolicy = orcapicontroller.ApiPolicy
-            const paramValidator = await orcapicontroller.preparams()
+            const main = init(req, res, next)
+            const paramValidator = await preparams()
             var httpstatus = 200
             if (paramValidator.isok) {
                 if (main.REQ_CONTEX === ApiPolicy.services.sysapp) {
@@ -27,24 +26,27 @@ module.exports = {
                         case ApiPolicy.sysapp.requestaccountverificationtoken:
                             response = await syservices.requestaccountverificationtoken(main)
                             break
+                        case ApiPolicy.sysapp.accountrecovery:
+                            response = await syservices.accountrecovery(main)
+                            break
                     }
                     if (response) {
                         httpstatus = response.iook ? 200 : 400
-                        orcapicontroller.responseSender({status: httpstatus, output: response})
+                        responseSender({status: httpstatus, output: response})
                     } else {
                         httpstatus = 400
-                        throw 'REQ_ACTION = ' + main.REQ_ACTION + ' Not Implemented!'
+                        throw `Request Action not implemented (REQ_ACTION=${main.REQ_ACTION})`
                     }
                 } else {
                     httpstatus = 400
-                    throw 'REQ_CONTEX Unauthorized service context.'
+                    throw `Request Context not Unauthorized (REQ_CONTEX=${REQ_CONTEX})`
                 }
             } else {
                 httpstatus = 500
-                throw ((paramValidator.error && paramValidator.error.trim().length > 0) ? paramValidator.error : 'Ocorreu um erro desconhecido. Por favor tente mais tarde. Obrigado.')
+                throw ((paramValidator.error && paramValidator.error.trim().length > 0) ? paramValidator.error : 'An unknown error has occurred. Please try again later.')
             }     
         } catch (error) {
-            orcapicontroller.responseSender({status: httpstatus, output: {error: error}})    
+            responseSender({status: httpstatus, output: {error: error}})    
         }
     }
 }

@@ -17,6 +17,7 @@ function init (req, res, next) {
   main.httpRequest = req
   main.httpResponse = res
   main.next = next
+  main.apiPolicy = apiPolicy
   return main
 }
 

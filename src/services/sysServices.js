@@ -50,37 +50,32 @@ async function createAccount (sysUserId, appContext) {
 async function seedAuxModels (payload) {
     const {clear} = payload.REQ_INPUTS
     const dbcallback = (r) => r
-    let logger = 'Seed aux db models: '
+    let logger = 'Seed aux db models: ', del, localtmp, test, datos
     if (clear) {
-        const loggerResult = function (dbname, r) {
-            console.log(dbname + ': ' +JSON.stringify(r))
-            logger += '\n ' + dbname + ': ' +JSON.stringify(r)
-        }
-        let del = await SysAppContext.deleteMany({}).then(dbcallback).catch(dbcallback)
-        loggerResult('SysAppContext', del)
+        del = await SysAppContext.deleteMany({}).then(dbcallback).catch(dbcallback)
+        logger += `\n SysAppContext: ${JSON.stringify(del)}`
         del = await SysAccountsStatus.deleteMany({}).then(dbcallback).catch(dbcallback)
-        loggerResult('SysAccountsStatus', del)
+        logger += `\n SysAccountsStatus: ${JSON.stringify(del)}`
         del = await SysUserTypes.deleteMany({}).then(dbcallback).catch(dbcallback)
-        loggerResult('SysUserTypes', del)
+        logger += `\n SysUserTypes: ${JSON.stringify(del)}`
     }
-    let localtmp = new SysAppContext({label: 'sys-app', appContext: 606060})
-    let test = await localtmp.save().then(dbcallback).catch(dbcallback)
+    localtmp = new SysAppContext({label: 'sys-app', appContext: 606060})
+    test = await localtmp.save().then(dbcallback).catch(dbcallback)
     if (test.code === 11000) {
-        console.log(test.message)
-        logger += '\n SysAppContext ' + test.message
+        logger += `\n SysAppContext: ${test.message}`
     }
-    let datos = [
+    datos = [
         {label: 'disabled', status: -100},
         {label: 'enabled', status: 100},
         {label: 'on_account_validation', status: 200},
-        {label: 'on_account_token_validation', status: 300}
+        {label: 'on_account_token_validation', status: 300},
+        {label: 'on_account_recovery_token_validation', status: 400}
     ]
     datos.forEach( async function (tf) {
         localtmp = new SysAccountsStatus(tf)
         test = await localtmp.save().then(dbcallback).catch(dbcallback)
         if (test.code === 11000) {
-            console.log(test.message)
-            logger += '\n SysAccountsStatus ' + test.message
+            logger += `\n SysAccountsStatus: ${test.message}`
         }
     })
     datos = [
@@ -94,16 +89,13 @@ async function seedAuxModels (payload) {
         localtmp = new SysUserTypes(tf)
         test = await localtmp.save().then(dbcallback).catch(dbcallback)
         if (test.code === 11000) {
-            console.log(test.message)
-            logger += '\n SysUserTypes ' + test.message
+            logger += `\n SysUserTypes: ${test.message}`
         }
     })
-
-    const usercreator = await createAdminUser(payload.REQ_CONTEX)
-    if (usercreator) {
+    test = await createAdminUser(payload.REQ_CONTEX)
+    if (test) {
         logger += '\n createAdminUser done.'
     }
-
     return response.resultOutputSuccess(logger)
 } 
 
@@ -299,8 +291,8 @@ async function updateAccountStatus (sysAccount, newStatus) {
     return null
 }
 
-async function accountStatusVerification (sysAccount, inputdata) {
-    const {token} = inputdata
+async function accountStatusVerification (sysAccount, payload) {
+    const {token} = payload.REQ_INPUTS
     let httpstatus = 400, expect, msgerr, tmpaux
     switch (sysAccount.status) {
         case 100:
@@ -336,6 +328,23 @@ async function accountStatusVerification (sysAccount, inputdata) {
                 }
             }
             break;
+        case 400:
+            if (payload.REQ_ACTION === payload.apiPolicy.sysapp.accountrecovery) {
+                
+            } else {
+                /*
+                Se o req_action não for igual a accountrecovery, quer dizer que nao faz sentido que o status
+                esteja a forçar a recuperacao da conta.
+                Assim e por razões de segurança o status deve ser atualizado para on_account_token_validation.
+                */
+               tmpaux = await updateAccountStatus(sysAccount, 300)
+               if (tmpaux) {
+                httpstatus = tmpaux.httpstatus
+                expect = tmpaux.action
+                msgerr = tmpaux.msgerr
+               }
+            }
+            break;    
         case -100:
         default:
             httpstatus = 400
@@ -350,6 +359,41 @@ async function accountStatusVerification (sysAccount, inputdata) {
     }
 }
 
+async function accountRecovery (payload) {
+    /**  Stage 1 on_account_recovery 
+     * > input field: email
+     * [1] check if email is registered
+     * [2] change account status to: 'on_account_recovery_token_validation'
+     * [3] change account token code
+     * [4] sendEmail with account validation token 
+     * < output: to view 'form-account-recovery'
+     *     
+     *   Stage 2 on_account_recovery_token_validation 
+     * > input field: email, token, secret, confirmSecret 
+     * [1] validate fields
+     * [2] accountStatusVerification
+     *  
+     */
+    let errmsg = null,
+    validation = sysPolicy.accountRecovery(payload.REQ_INPUTS, 1)
+    if (validation.isok) {
+        let {email, token, secret, confirmSecret } = payload.REQ_INPUTS
+        const user = await SysUser.findOne({email: email})
+        if (user) {
+            const sysaccount = await SysAccounts.findOne({sysUserId: user._id, appContext: payload.REQ_CONTEX})
+            if (sysaccount) {
+
+            }
+        } else {
+            errmsg = ''
+        } 
+    } else {
+        errmsg = validation.error
+    }
+    
+    return response.resultOutputSuccess(``)
+}
+
 async function tokenSessionVerify (payload) {
     let output = {
         sysUserId: null,
@@ -357,18 +401,22 @@ async function tokenSessionVerify (payload) {
         msgerr: null,
         valid: false
     }
-    const {token_session} = payload.REQ_INPUTS
-     /* (request context VS (query appContext) VS request token param) */
      const reqappcontext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
      if (reqappcontext) {
-         const {id, appContext} = jwt.tokenVerify(token_session)
-         output.valid = (id && appContext) && (appContext === reqappcontext.appContext)
-         if (output.valid) {
-            output.sysUserId = id
-            output.appContext = appContext
-         } else {
-            output.msgerr = 'Error, No app context!'
-         }
+        /* (request context VS (query appContext) VS request token param) */
+        const jwtoken = jwt._tokenVerify(payload.httpRequest.headers.authorization)
+        if (jwtoken.valid) {
+            const {id, appContext} = jwtoken.valid
+            output.valid = (id && appContext) && (appContext === reqappcontext.appContext)
+            if (output.valid) {
+               output.sysUserId = id
+               output.appContext = appContext
+            } else {
+                output.msgerr = 'Error, invalid token session.'
+            }
+        } else {
+            output.msgerr = jwtoken.errmsg
+        }
      } else {
          output.msgerr = 'Error, Account not found.'
      }
@@ -381,7 +429,7 @@ async function accountverification (payload) {
     if (token_session.valid) {
         const sysaccount = await SysAccounts.findOne({sysUserId: token_session.sysUserId, appContext: token_session.appContext})
         if (sysaccount) {
-            const preresponse = await accountStatusVerification(sysaccount, payload.REQ_INPUTS)
+            const preresponse = await accountStatusVerification(sysaccount, payload)
             if (preresponse.httpstatus === 200) {
                 let nextStage = {to: 'login'}
                 console.log(`** Account Verification: expect:${preresponse.expect} vs 'enabled'`)
@@ -432,7 +480,8 @@ const _instances = {
     signin: signin,
     accountverification: accountverification,
     seedauxmodels: seedAuxModels,
-    requestaccountverificationtoken: requestAccountVerificationToken   
+    requestaccountverificationtoken: requestAccountVerificationToken,
+    accountrecovery: accountRecovery   
 };
 
 module.exports = _instances
