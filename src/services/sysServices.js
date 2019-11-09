@@ -22,7 +22,7 @@ async function createAdminUser (appContext) {
         email: email, 
         mobile: +111123456789,
         secret: secret, 
-        type: 1000
+        type: sysPolicy.USER_TYPE_ADMIN
     }).save().then((r) => r).catch((r) => r)
     if (admin) {
         createAccount(admin._id, appContext)
@@ -32,7 +32,7 @@ async function createAdminUser (appContext) {
 
 async function createAccount (sysUserId, appContext) {
     //onValidation
-    const accountStatus = 200 
+    const accountStatus = sysAccount.ACCOUNT_STATUS_ON_VALIDATION 
     const accountToken = tokenGenerator()
     const sysAccount = new SysAccounts({
         sysUserId: sysUserId,
@@ -71,8 +71,8 @@ async function seedAuxModels (payload) {
         {label: 'disabled', status: sysPolicy.ACCOUNT_STATUS_DISABLED},
         {label: 'enabled', status: sysPolicy.ACCOUNT_STATUS_ENABLED},
         {label: 'on_account_validation', status: sysPolicy.ACCOUNT_STATUS_ON_VALIDATION},
-        {label: 'on_account_token_validation', status: sysPolicy.ACCOUNT_STATUS_ON_VALIDATION},
-        {label: 'on_account_recovery_token_validation', status: 400}
+        {label: 'on_account_token_validation', status: sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION},
+        {label: 'on_account_recovery_token_validation', status: sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION}
     ]
     datos.forEach( async function (tf) {
         localtmp = new SysAccountsStatus(tf)
@@ -102,7 +102,75 @@ async function seedAuxModels (payload) {
     return response.resultOutputSuccess(logger)
 } 
 
-function tokenGenerator () { return uuid() }
+const SYS_HELPER = {
+    userQuery: async (query) => {
+        const user = await SysUser.findOne(query)
+        return {user}
+    },
+    accountQuery: async (query) => {
+        const sysaccount = await SysAccounts.findOne(query)
+        return {sysaccount}
+    },
+    isEmailRegistered: async (email) => {
+        const {user} = await SYS_HELPER.userQuery({email: email})
+        return user
+    },
+    userAccountByUserId: async (sysUserId, appContext) => {
+        const {sysaccount} = await SYS_HELPER.accountQuery({sysUserId: sysUserId, appContext: appContext})
+        const {user} = await SYS_HELPER.userQuery({_id: sysUserId})
+        return {sysaccount, user}
+    },
+    userAccountByUserEmail: async (userEmail, appContext) => {
+        const {user} = await SYS_HELPER.userQuery({email: userEmail})
+        const {sysaccount} = await SYS_HELPER.accountQuery({sysUserId: user._id, appContext: appContext})
+        return {user, sysaccount}
+    },
+    emailSysAccountModels: async (sysUserId, appContext) => {
+        const {user, sysaccount} = await SYS_HELPER.userAccountByUserId(sysUserId, appContext)
+        const appcontext = await SysAppContext.findOne({appContext: appContext})
+        return {user, sysaccount, appcontext}
+    },
+    getSysEmailTemplate: async (sysUserId, appContext) => {
+        const {user, sysaccount, appcontext} = await SYS_HELPER.emailSysAccountModels(sysUserId, appContext)
+        let to, subject, html, text, msgerr, isok
+        if (user) {
+            isok = true
+            to = user.email
+            let hasSignature
+            switch (sysaccount.status) {
+                case sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION:
+                case sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION:
+                    hasSignature = true
+                    if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION) {
+                        subject = 'validation'
+                        html = 'the verification'
+                    } else {
+                        subject = 'recovery'
+                        html = 'email with the recovery'
+                    }
+                    subject = `account ${subject} token code - ${appcontext.label}`
+                    html = `<p>We have sent you ${html} code for your account. </p> 
+                            <p>You can copy and paste into the validation form the following code:</p>
+                            <p><code style="margin-left: 100px;font-weight: bold;">${sysaccount.token}</code></p>`
+                    break
+                default:
+                    hasSignature = true
+                    subject = `request cannot be satisfied - ${appcontext.label}`
+                    html = `<p>Hi ${user.name}.</p>
+                            <p>Your request cannot be satisfied because your account status not correspond.</p>`
+                    break
+            }
+            
+            if (hasSignature) {
+                html += `<p>Thanks,</p><p>The ${appcontext.label} Team</p>`
+            }
+        } else {
+            isok = false
+            msgerr = 'Error email not sent cause user not found.'
+        }
+        return {to, subject, html, text, msgerr, isok}
+    }    
+}
 
 async function sendMail (to, subject, text, html) {
     emailSender.accountProfile = 'oscarafael_gmail'
@@ -119,6 +187,70 @@ async function sendMail (to, subject, text, html) {
     return false
 }
 
+async function sendEmailAccountTemplate (emailparam) {
+    const outpreres = {
+        msgerr: null,
+        isok: false
+    }
+   
+    outpreres.isok = await sendMail(emailparam.to, emailparam.subject, emailparam.text, emailparam.html)
+
+    if (outpreres.isok) {
+        
+    } else {
+        outpreres.msgerr = `Fail sent email! error id: ${emailparam.to} .`
+    }
+    return outpreres
+}
+
+async function sendMailAccountVerificationToken (sysUserId, appContext) {
+    const {to, subject, html, text, msgerr, isok} = await SYS_HELPER.getSysEmailTemplate(sysUserId, appContext)
+    if (isok) {
+        const result = await sendEmailAccountTemplate({
+            to: to,
+            subject: subject,
+            html: html
+        })
+        return result
+    } else {
+        return {
+            msgerr: msgerr,
+            isok: isok
+        }
+    }
+}
+
+async function tokenSessionVerify (payload) {
+    let output = {
+        sysUserId: null,
+        appContext: null,
+        msgerr: null,
+        valid: false
+    }
+     const reqappcontext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
+     if (reqappcontext) {
+        /* (request context VS (query appContext) VS request token param) */
+        const jwtoken = jwt._tokenVerify(payload.httpRequest.headers.authorization)
+        if (jwtoken.valid) {
+            const {id, appContext} = jwtoken.valid
+            output.valid = (id && appContext) && (appContext === reqappcontext.appContext)
+            if (output.valid) {
+               output.sysUserId = id
+               output.appContext = appContext
+            } else {
+                output.msgerr = 'Error, invalid token session.'
+            }
+        } else {
+            output.msgerr = jwtoken.errmsg
+        }
+     } else {
+         output.msgerr = 'Error, Account not found.'
+     }
+     return output
+}
+
+function tokenGenerator () { return uuid() }
+
 async function signup (payload) {
     const validation = sysPolicy.signup(payload.REQ_INPUTS)
     if (validation.isok) {
@@ -130,7 +262,7 @@ async function signup (payload) {
                 email: email, 
                 mobile: mobile,
                 secret: secret, 
-                type: 500
+                type: sysPolicy.USER_TYPE_USER
             })
             const result = await user.save().then((r) => r).catch((r) => r)  
             if (result.errors || result.code === 11000) {
@@ -211,71 +343,6 @@ async function signin (payload) {
     })
 }
 
-/* 
-criteria = {
-    sysUserId: sysAccount.sysUserId, 
-    appContext: sysAccount.appContext
-} 
-*/
-async function accountStatusActions (sysaccount) {
-    let outpreres = {
-        httpstatus: 200,
-        action: '',
-        msgerr: ''
-    }
-    switch (sysaccount.status) {
-        case 100:
-            outpreres.action = 'enabled'
-        break;
-        case 200:
-            outpreres.action = 'on_account_validation'
-        break;
-        case 300:
-            const emailsent = await sendMailAccountVerificationToken(sysaccount.sysUserId, sysaccount.appContext)
-            if (emailsent.isok) {
-                outpreres.action = 'on_account_token_validation'
-            } else {
-                outpreres.httpstatus = 400
-                outpreres.msgerr = emailsent.msgerr
-            }
-        break;
-        case -100: 
-        default:
-            outpreres.httpstatus = 400
-            outpreres.action = 'disabled'
-        break;
-    }
-    return outpreres
-}
-
-async function sendMailAccountVerificationToken (sysUserId, appContext) {
-    const outpreres = {
-        msgerr: null,
-        isok: false
-    }
-    const sysaccount = await SysAccounts.findOne({sysUserId: sysUserId, appContext: appContext})
-    const appcontext = await SysAppContext.findOne({appContext: appContext})
-    const user = await SysUser.findOne({_id: sysUserId})
-    if (user) { 
-        let to = user.email 
-        let subject = `Account validation token code - ${appcontext.label}`
-        let html = `<p>We have sent you the verification code for your account.</p>`
-        html += `<p>You can copy and paste into the validation form the following code:</p>`
-        html += `<p><code style="margin-left: 100px;">${sysaccount.token}</code></p>`
-        html += `<p>Thanks,</p>`
-        html += `<p>The ${appcontext.label} Team</p>`
-        outpreres.isok = await sendMail(to, subject, null, html)
-        if (outpreres.isok) {
-            
-        } else {
-            outpreres.msgerr = `Fail sent email! error id: ${user._id} ${appcontext.label}.`
-        }
-    } else {
-        outpreres.msgerr = `User not found! id: ${sysaccount.sysUserId} ${appcontext.label}`
-    }
-    return outpreres
-}
-
 async function updateAccount (criteria, query) {
     const update = await SysAccounts.updateOne(criteria, query)
     return update
@@ -294,17 +361,58 @@ async function updateAccountStatus (sysAccount, newStatus) {
     return null
 }
 
+/* 
+criteria = {
+    sysUserId: sysAccount.sysUserId, 
+    appContext: sysAccount.appContext
+} 
+*/
+async function accountStatusActions (sysaccount) {
+    let outpreres = {
+        httpstatus: 200,
+        action: '',
+        msgerr: ''
+    }
+    switch (sysaccount.status) {
+        case sysPolicy.ACCOUNT_STATUS_ENABLED:
+            outpreres.action = 'enabled'
+        break
+        case sysPolicy.ACCOUNT_STATUS_ON_VALIDATION:
+            outpreres.action = 'on_account_validation'
+        break
+        case sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION:
+        case sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION:
+            const emailsent = await sendMailAccountVerificationToken(sysaccount.sysUserId, sysaccount.appContext)
+            if (emailsent.isok) {
+                if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION) 
+                    outpreres.action = 'on_account_token_validation'
+                else if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION) 
+                    outpreres.action = 'on_account_recovery_token_validation'
+            } else {
+                outpreres.httpstatus = 400
+                outpreres.msgerr = emailsent.msgerr
+            }
+        break
+        case sysPolicy.ACCOUNT_STATUS_DISABLED: 
+        default:
+            outpreres.httpstatus = 400
+            outpreres.action = 'disabled'
+        break
+    }
+    return outpreres
+}
+
 async function accountStatusVerification (sysAccount, payload) {
     const {token} = payload.REQ_INPUTS
     let httpstatus = 400, expect, msgerr, tmpaux
     switch (sysAccount.status) {
-        case 100:
+        case sysPolicy.ACCOUNT_STATUS_ENABLED:
             httpstatus = 200
             expect = 'enabled'
-            break;
-        case 200:
+            break
+        case sysPolicy.ACCOUNT_STATUS_ON_VALIDATION:
             /** change  account status */
-            tmpaux = await updateAccountStatus(sysAccount, 300)
+            tmpaux = await updateAccountStatus(sysAccount, sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION)
             /*
                 action:"on_account_token_validation"
                 httpstatus:200
@@ -314,13 +422,13 @@ async function accountStatusVerification (sysAccount, payload) {
                 expect = tmpaux.action
                 msgerr = tmpaux.msgerr
             }
-            break;
-        case 300:
+            break
+        case sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION:
             if (typeof token === 'undefined') {
                 msgerr = 'Bad request. token field is required.'
             } else {
                 if (token === sysAccount.token) {
-                    tmpaux = await updateAccountStatus(sysAccount, 100)
+                    tmpaux = await updateAccountStatus(sysAccount, sysPolicy.ACCOUNT_STATUS_ENABLED)
                     if (tmpaux) {
                         httpstatus = tmpaux.httpstatus
                         expect = tmpaux.action
@@ -330,8 +438,8 @@ async function accountStatusVerification (sysAccount, payload) {
                     msgerr = 'Invalid token code.'
                 }
             }
-            break;
-        case 400:
+            break
+        case sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION:
             if (payload.REQ_ACTION === payload.apiPolicy.sysapp.accountrecovery) {
                 
             } else {
@@ -340,90 +448,26 @@ async function accountStatusVerification (sysAccount, payload) {
                 esteja a forçar a recuperacao da conta.
                 Assim e por razões de segurança o status deve ser atualizado para on_account_token_validation.
                 */
-               tmpaux = await updateAccountStatus(sysAccount, 300)
+               tmpaux = await updateAccountStatus(sysAccount, sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION)
                if (tmpaux) {
                 httpstatus = tmpaux.httpstatus
                 expect = tmpaux.action
                 msgerr = tmpaux.msgerr
                }
             }
-            break;    
-        case -100:
+            break    
+        case sysPolicy.ACCOUNT_STATUS_DISABLED:
         default:
             httpstatus = 400
             expect = 'disabled'
             msgerr = 'Account disabled.'
-            break;
+            break
     }
     return {
         httpstatus: httpstatus,
         expect: expect,
         msgerr: msgerr
     }
-}
-
-async function accountRecovery (payload) {
-    /**  Stage 1 on_account_recovery 
-     * > input field: email
-     * [1] check if email is registered
-     * [2] change account status to: 'on_account_recovery_token_validation'
-     * [3] change account token code
-     * [4] sendEmail with account validation token 
-     * < output: to view 'form-account-recovery'
-     *     
-     *   Stage 2 on_account_recovery_token_validation 
-     * > input field: email, token, secret, confirmSecret 
-     * [1] validate fields
-     * [2] accountStatusVerification
-     *  
-     */
-    let errmsg = null,
-    validation = sysPolicy.accountRecovery(payload.REQ_INPUTS, 1)
-    if (validation.isok) {
-        let {email, token, secret, confirmSecret } = payload.REQ_INPUTS
-        const user = await SysUser.findOne({email: email})
-        if (user) {
-            const sysaccount = await SysAccounts.findOne({sysUserId: user._id, appContext: payload.REQ_CONTEX})
-            if (sysaccount) {
-
-            }
-        } else {
-            errmsg = ''
-        } 
-    } else {
-        errmsg = validation.error
-    }
-    
-    return response.resultOutputSuccess(``)
-}
-
-async function tokenSessionVerify (payload) {
-    let output = {
-        sysUserId: null,
-        appContext: null,
-        msgerr: null,
-        valid: false
-    }
-     const reqappcontext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
-     if (reqappcontext) {
-        /* (request context VS (query appContext) VS request token param) */
-        const jwtoken = jwt._tokenVerify(payload.httpRequest.headers.authorization)
-        if (jwtoken.valid) {
-            const {id, appContext} = jwtoken.valid
-            output.valid = (id && appContext) && (appContext === reqappcontext.appContext)
-            if (output.valid) {
-               output.sysUserId = id
-               output.appContext = appContext
-            } else {
-                output.msgerr = 'Error, invalid token session.'
-            }
-        } else {
-            output.msgerr = jwtoken.errmsg
-        }
-     } else {
-         output.msgerr = 'Error, Account not found.'
-     }
-     return output
 }
 
 async function accountverification (payload) {
@@ -467,7 +511,7 @@ async function requestAccountVerificationToken (payload) {
             if (emailtoken.isok) {
                 return response.resultOutputSuccess('Sent email account verification token. Success.')
             } else {
-                msgres = emailtoken.msgerr 
+                msgres = emailtoken.msgerr
             }
         } else {
             msgres = 'Error updateAccount.'
@@ -478,6 +522,67 @@ async function requestAccountVerificationToken (payload) {
     return response.resultOutputError(msgres)
 }
 
+async function accountRecovery (payload) {
+    /**  Stage 1 on_account_recovery 
+     * > input field: email
+     * [1] 
+     *  · check email is registered √
+     *  · check is user account is valid √
+     * [2] change account status to: 'on_account_recovery_token_validation'
+     * [3] change account token code
+     * [4] sendEmail with account validation token 
+     * < output: to view 'form-account-recovery'
+     *     
+     *   Stage 2 on_account_recovery_token_validation 
+     * > input field: email, token, secret, confirmSecret 
+     * [1] validate fields
+     * [2] accountStatusVerification
+     *  
+     */
+    let errmsg, nextStage = {
+        to: 'account-recovery'
+    }
+    validation = sysPolicy.accountRecovery(payload.REQ_INPUTS, 1)
+    if (validation.isok) {
+        let {email, token, secret, confirmSecret } = payload.REQ_INPUTS
+        /*verificar se email se encontra registado */
+        const isEmailRegistered = await SYS_HELPER.isEmailRegistered(email)        
+        if (isEmailRegistered) {
+            const {user, sysaccount} = await SYS_HELPER.userAccountByUserEmail(email, payload.REQ_CONTEX)
+            /* verificar se este utilizador tem uma conta valida para esta aplicacao */
+            if (sysaccount) {
+                let updateAS = null
+                if (sysaccount.status !== sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION) {
+                    updateAS = await updateAccountStatus(sysaccount, sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION)
+                } 
+                if (updateAS) {
+                    switch (updateAS.httpstatus) {
+                        case 200:
+                            if (updateAS.action === 'on_account_recovery_token_validation') {
+                                nextStage.message = 'We have sent you an email with the recovery code for your account.'
+                                nextStage.to = 'account-recovery'
+                            }
+                            break
+                        default:
+
+                            break
+                    }
+                    return response.resultOutputDataOk(nextStage)
+                } else {
+                    errmsg = updateAS.msgerr
+                }
+            } else {
+                errmsg = 'The user account is not valid for this application.'
+            } 
+        } else {
+            errmsg = 'Email is not registered.'
+        } 
+    } else {
+        errmsg = validation.error
+    }
+    return response.resultOutputError(errmsg)
+}
+
 const _instances = {
     signup: signup,
     signin: signin,
@@ -485,6 +590,6 @@ const _instances = {
     seedauxmodels: seedAuxModels,
     requestaccountverificationtoken: requestAccountVerificationToken,
     accountrecovery: accountRecovery   
-};
+}
 
 module.exports = _instances

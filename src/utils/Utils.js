@@ -47,14 +47,14 @@ function _tokenVerify (token) {
   let tokenIOOK = false, testStr = null
   try {
     if (typeof token === 'undefined' || token.length === 0)
-      throw 'Error, token undefined.'
+      throw 'Error, undefined token.'
     token = token.trim().replace('Bearer', '').trim()
     tokenIOOK = jwt.verify(token, config.authentication.jwtSecret, function (err, decoded) {
-      if (err) throw err
+      if (err) throw err.message
       return decoded
     })
   } catch (err) {
-    if (err) testStr = err.message
+    if (err) testStr = err
   }
   return {
     valid: tokenIOOK,
