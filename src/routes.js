@@ -10,15 +10,14 @@ const SysAccountController = require('./controllers/SysAccountController')
 
 module.exports = (app) => {
 
-  /** SysApp Routes @begin **/
-
+/** SysApp Routes @begin **/
   app.post('/sign-up', SysAccountController.execute)
   app.post('/sign-in', SysAccountController.execute)
   app.post('/account-verification', SysAccountController.execute)
   app.post('/request-account-verification-token', SysAccountController.execute)
+  app.post('/request-account-recovery-token', SysAccountController.execute)
   app.post('/auto-seed-aux-models', SysAccountController.execute)
-
-  /** SysApp Routes @end **/
+/** SysApp Routes @end **/
 
   app.post('/register', AccountController.execute)
   app.post('/login', AccountController.execute)

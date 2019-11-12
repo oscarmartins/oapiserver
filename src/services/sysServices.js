@@ -9,30 +9,29 @@ const uuid = require('uuid')
 async function createAdminUser (appContext) {
     const email = httpResponseUtils.getEmail()
     const secret = httpResponseUtils.getSecret()
-    let admin = await SysUser.findOne({email: email})
-    if (admin) {
-        admin = await SysAccounts.deleteOne({sysUserId: admin._id, appContext: appContext}).then(async (r) => {
+    let {user} = await SYS_HELPER.userQuery({email: email})
+    if (user) {
+        user = await SysAccounts.deleteOne({sysUserId: user._id, appContext: appContext}).then(async (r) => {
             const rmuser = await SysUser.deleteOne({email: email})
             return r
         }).catch((r) => r)
-        //admin = await SysUser.remove({email: email})
     } 
-    admin = await new SysUser({
+    user = await new SysUser({
         name: 'user admin', 
         email: email, 
         mobile: +111123456789,
         secret: secret, 
         type: sysPolicy.USER_TYPE_ADMIN
     }).save().then((r) => r).catch((r) => r)
-    if (admin) {
-        createAccount(admin._id, appContext)
+    if (user) {
+        createAccount(user._id, appContext)
     }
     return response.resultOutputSuccess('seed SysAdmin user created .')
 }
 
 async function createAccount (sysUserId, appContext) {
     //onValidation
-    const accountStatus = sysAccount.ACCOUNT_STATUS_ON_VALIDATION 
+    const accountStatus = sysPolicy.ACCOUNT_STATUS_ON_VALIDATION 
     const accountToken = tokenGenerator()
     const sysAccount = new SysAccounts({
         sysUserId: sysUserId,
@@ -113,7 +112,7 @@ const SYS_HELPER = {
     },
     isEmailRegistered: async (email) => {
         const {user} = await SYS_HELPER.userQuery({email: email})
-        return user
+        return (user && user.email === email)
     },
     userAccountByUserId: async (sysUserId, appContext) => {
         const {sysaccount} = await SYS_HELPER.accountQuery({sysUserId: sysUserId, appContext: appContext})
@@ -124,6 +123,32 @@ const SYS_HELPER = {
         const {user} = await SYS_HELPER.userQuery({email: userEmail})
         const {sysaccount} = await SYS_HELPER.accountQuery({sysUserId: user._id, appContext: appContext})
         return {user, sysaccount}
+    },
+    userUpdate: async (sysUser, queryUpdate) => {
+        const criteria = {_id: sysUser._id, email: sysUser.email}
+        Object.assign(queryUpdate, {dateUpdated: Date.now()})
+        if (typeof queryUpdate.secret !== 'undefined') {
+            queryUpdate.secret = SysUser.encryptPassword(queryUpdate.secret)
+        }
+        const result = await SysUser.updateOne(criteria, queryUpdate)
+        return result
+    },
+    updateAccount: async (criteria, query) => {
+        Object.assign(query, {dateUpdated: Date.now()})
+        const update = await SysAccounts.updateOne(criteria, query)
+        return update
+    },
+    changeAccountToken: async (tokenobj) => {
+        const update = await SYS_HELPER.updateAccount({sysUserId: tokenobj.sysUserId, appContext: tokenobj.appContext}, {token: tokenGenerator()})
+        if (update.ok && update.ok === 1 && update.nModified >= 1) {
+            const emailtoken = await sendMailAccountVerificationToken(tokenobj.sysUserId, tokenobj.appContext)
+            return emailtoken
+        } else {
+            return {
+                msgerr: 'Error updateAccount.',
+                isok: false
+            }
+        }
     },
     emailSysAccountModels: async (sysUserId, appContext) => {
         const {user, sysaccount} = await SYS_HELPER.userAccountByUserId(sysUserId, appContext)
@@ -160,7 +185,6 @@ const SYS_HELPER = {
                             <p>Your request cannot be satisfied because your account status not correspond.</p>`
                     break
             }
-            
             if (hasSignature) {
                 html += `<p>Thanks,</p><p>The ${appcontext.label} Team</p>`
             }
@@ -308,29 +332,40 @@ async function signup (payload) {
 
 async function signin (payload) {
     const validation = sysPolicy.signin(payload.REQ_INPUTS)
-    let msgerr = null
-    let jwttoken = null
+    let msgerr = null, 
+        jwttoken = null
     if (validation.isok) {
-        let goodlogin = false
-        const appContext = await SysAppContext.findOne({appContext: payload.REQ_CONTEX})
-        if (appContext) {
-            const {email, secret} = payload.REQ_INPUTS
-            const result = await SysUser.findOne({email: email})
-            goodlogin = (result && result.validPassword(secret))
-            if (goodlogin) {
-                console.log('good login!')
+        const {email, secret} = payload.REQ_INPUTS
+        const {user} = await SYS_HELPER.userQuery({email: email})
+        const goodlogin = user && await user.validPassword(secret).then((r) => {
+            return r
+        }).catch((err) => {
+            return false
+        })
+
+        if (goodlogin) {
+            console.log('good login!')
+            const {sysaccount} = await SYS_HELPER.accountQuery({sysUserId: user.id, appContext: payload.REQ_CONTEX})
+            if (sysaccount) {
+                if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION) {
+                    const criteria = {sysUserId: sysaccount.sysUserId, appContext: sysaccount.appContext}
+                    const queryupd = {status: sysPolicy.ACCOUNT_STATUS_ON_VALIDATION, token: tokenGenerator()}
+                    const update = await SYS_HELPER.updateAccount(criteria, queryupd)
+                    if (update.ok && update.ok === 1 && update.nModified >= 1) {
+                        console.log(`_> Account updated new status: ${sysPolicy.ACCOUNT_STATUS_ON_VALIDATION}`)
+                    }
+                }
                 jwttoken = jwt.sessionToken({
-                    id: result.id,
-                    appContext: appContext.appContext
+                    id: user.id,
+                    appContext: sysaccount.appContext
                 })
-            } 
-        } 
-        if (!goodlogin) {
-            /*Unauthorized*/
-            msgerr = 'Login error. Wrong data.'
-            if (appContext == null || typeof appContext === 'undefined') {
-                console.log('sent email to admin. Not found app context.')
+            } else {
+                msgerr = 'Error. Account problem.'
             }
+        } else {
+            /*Unauthorized*/
+            console.log('Unauthorized!')
+            msgerr = 'Error login unauthorized!'
         }
     } else {
         msgerr = validation.error
@@ -343,35 +378,26 @@ async function signin (payload) {
     })
 }
 
-async function updateAccount (criteria, query) {
-    const update = await SysAccounts.updateOne(criteria, query)
-    return update
-}
-
 async function updateAccountStatus (sysAccount, newStatus) {
     const criteria = {sysUserId: sysAccount.sysUserId, appContext: sysAccount.appContext}
-    const query = {status: newStatus, dateUpdated: Date.now()}
-    if (newStatus === 100) query.token = tokenGenerator()
-    const update = await updateAccount(criteria, query)
+    const query = {status: newStatus}
+    if (newStatus === sysPolicy.ACCOUNT_STATUS_ENABLED) 
+        query.token = tokenGenerator()
+    const update = await SYS_HELPER.updateAccount(criteria, query)
     if (update.ok && update.ok === 1 && update.nModified >= 1) {
-        const sysaccount = await SysAccounts.findOne(criteria)
+        const {sysaccount} = await SYS_HELPER.accountQuery(criteria)
         const actions = await accountStatusActions(sysaccount)
         return actions
     } 
     return null
 }
 
-/* 
-criteria = {
-    sysUserId: sysAccount.sysUserId, 
-    appContext: sysAccount.appContext
-} 
-*/
 async function accountStatusActions (sysaccount) {
     let outpreres = {
         httpstatus: 200,
         action: '',
-        msgerr: ''
+        msgerr: '',
+        message: ''
     }
     switch (sysaccount.status) {
         case sysPolicy.ACCOUNT_STATUS_ENABLED:
@@ -384,10 +410,14 @@ async function accountStatusActions (sysaccount) {
         case sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION:
             const emailsent = await sendMailAccountVerificationToken(sysaccount.sysUserId, sysaccount.appContext)
             if (emailsent.isok) {
-                if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION) 
+                if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION) {
                     outpreres.action = 'on_account_token_validation'
-                else if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION) 
+                    outpreres.message = 'the verification'
+                } else if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION) {
                     outpreres.action = 'on_account_recovery_token_validation'
+                    outpreres.message = 'email with the recovery'
+                }
+                outpreres.message = `We have sent you ${outpreres.message} code for your account. `  
             } else {
                 outpreres.httpstatus = 400
                 outpreres.msgerr = emailsent.msgerr
@@ -404,7 +434,7 @@ async function accountStatusActions (sysaccount) {
 
 async function accountStatusVerification (sysAccount, payload) {
     const {token} = payload.REQ_INPUTS
-    let httpstatus = 400, expect, msgerr, tmpaux
+    let httpstatus = 400, expect, msgerr, message, tmpaux
     switch (sysAccount.status) {
         case sysPolicy.ACCOUNT_STATUS_ENABLED:
             httpstatus = 200
@@ -413,26 +443,24 @@ async function accountStatusVerification (sysAccount, payload) {
         case sysPolicy.ACCOUNT_STATUS_ON_VALIDATION:
             /** change  account status */
             tmpaux = await updateAccountStatus(sysAccount, sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION)
-            /*
-                action:"on_account_token_validation"
-                httpstatus:200
-            */
             if (tmpaux) {
                 httpstatus = tmpaux.httpstatus
                 expect = tmpaux.action
                 msgerr = tmpaux.msgerr
+                message = tmpaux.message
             }
             break
         case sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION:
             if (typeof token === 'undefined') {
                 msgerr = 'Bad request. token field is required.'
             } else {
-                if (token === sysAccount.token) {
+                if (await sysAccount.validateToken(token).then((r)=> r).catch( () => false)) {
                     tmpaux = await updateAccountStatus(sysAccount, sysPolicy.ACCOUNT_STATUS_ENABLED)
                     if (tmpaux) {
                         httpstatus = tmpaux.httpstatus
                         expect = tmpaux.action
                         msgerr = tmpaux.msgerr
+                        message = tmpaux.message
                     }
                 } else {
                     msgerr = 'Invalid token code.'
@@ -441,7 +469,7 @@ async function accountStatusVerification (sysAccount, payload) {
             break
         case sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION:
             if (payload.REQ_ACTION === payload.apiPolicy.sysapp.accountrecovery) {
-                
+                //TODO
             } else {
                 /*
                 Se o req_action não for igual a accountrecovery, quer dizer que nao faz sentido que o status
@@ -453,6 +481,7 @@ async function accountStatusVerification (sysAccount, payload) {
                 httpstatus = tmpaux.httpstatus
                 expect = tmpaux.action
                 msgerr = tmpaux.msgerr
+                message = tmpaux.message
                }
             }
             break    
@@ -466,62 +495,81 @@ async function accountStatusVerification (sysAccount, payload) {
     return {
         httpstatus: httpstatus,
         expect: expect,
-        msgerr: msgerr
+        msgerr: msgerr,
+        message: message
     }
 }
 
-async function accountverification (payload) {
-    let outputErr = null
+async function accountVerification (payload) {
+    let nextStage = {to: 'login', message: null}
     const token_session = await tokenSessionVerify(payload)
     if (token_session.valid) {
-        const sysaccount = await SysAccounts.findOne({sysUserId: token_session.sysUserId, appContext: token_session.appContext})
+        const {sysaccount} = await SYS_HELPER.accountQuery({sysUserId: token_session.sysUserId, appContext: token_session.appContext})
         if (sysaccount) {
             const preresponse = await accountStatusVerification(sysaccount, payload)
             if (preresponse.httpstatus === 200) {
-                let nextStage = {to: 'login'}
+                nextStage.message = preresponse.message
                 console.log(`** Account Verification: expect:${preresponse.expect} vs 'enabled'`)
                 if (preresponse.expect === 'enabled') {
                     nextStage.to = 'dashboard'
                 } else if (preresponse.expect === 'on_account_token_validation') {
                     nextStage.to = 'account-validation'
                 } 
-                return response.resultOutputDataOk(nextStage)
             } else {
-                outputErr = preresponse.msgerr
+                nextStage.to = 'account-validation'
+                nextStage.message = preresponse.msgerr
             }
+            return response.resultOutputDataOk(nextStage)
         } else {
-            outputErr = 'Bad Request parameters'
+            nextStage.message = 'Error. Account problem.'
         }
     } else {
-        outputErr = token_session.msgerr
+        nextStage.message = token_session.msgerr
     }
-    return response.resultOutputError(outputErr) 
+    return response.resultOutputDataError(nextStage)
 }
 
 async function requestAccountVerificationToken (payload) {
-    let msgres = null
+    let errmsg = null
     const token_session = await tokenSessionVerify(payload)
     if (token_session.valid) {
-        const criteria = {sysUserId: token_session.sysUserId, appContext: token_session.appContext}
-        const query = {token: null, dateUpdated: Date.now()}
-        query.token = tokenGenerator()
-        const update = await updateAccount(criteria, query)
-        if (update.ok && update.ok === 1 && update.nModified >= 1) {
-            const emailtoken = await sendMailAccountVerificationToken(token_session.sysUserId, token_session.appContext)
+        const {sysaccount} = await SYS_HELPER.userAccountByUserId(token_session.sysUserId, token_session.appContext)
+        if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_TOKEN_VALIDATION) {
+            const emailtoken = await SYS_HELPER.changeAccountToken({sysUserId: sysaccount.sysUserId, appContext: sysaccount.appContext})
             if (emailtoken.isok) {
-                return response.resultOutputSuccess('Sent email account verification token. Success.')
+                return response.resultOutputSuccess('Success. Sent email account verification token. ')
+            } else {
+                errmsg = emailtoken.msgerr
+            }
+        } else {
+            errmsg = 'The account status not permit execute this operation.'
+        }
+    } else {
+        errmsg = token_session.msgerr
+    }
+    return response.resultOutputError(errmsg)
+}
+async function requestAccountRecoveryToken (payload) {
+    let errmsg = null
+    const emailvalidator = sysPolicy.accountRecovery(payload.REQ_INPUTS, 1)
+    if (emailvalidator.isok) {
+        const {email} = payload.REQ_INPUTS
+        const {sysaccount} = await SYS_HELPER.userAccountByUserEmail(email, payload.REQ_CONTEX)
+        if (sysaccount.status === sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION) {
+            const emailtoken = await SYS_HELPER.changeAccountToken({sysUserId: sysaccount.sysUserId, appContext: sysaccount.appContext})
+            if (emailtoken.isok) {
+                return response.resultOutputSuccess('Success. Sent email account recovery token. ')
             } else {
                 msgres = emailtoken.msgerr
             }
         } else {
-            msgres = 'Error updateAccount.'
+            errmsg = 'The account status not permit execute this operation.'
         }
     } else {
-        msgres = token_session.msgerr
+        errmsg = emailvalidator.error
     }
-    return response.resultOutputError(msgres)
+    return response.resultOutputError(errmsg)
 }
-
 async function accountRecovery (payload) {
     /**  Stage 1 on_account_recovery 
      * > input field: email
@@ -539,37 +587,70 @@ async function accountRecovery (payload) {
      * [2] accountStatusVerification
      *  
      */
-    let errmsg, nextStage = {
-        to: 'account-recovery'
-    }
-    validation = sysPolicy.accountRecovery(payload.REQ_INPUTS, 1)
+    const {email, token, secret, confirmSecret} = payload.REQ_INPUTS
+    let errmsg, 
+    nextStage = {
+        to: 'account-recovery',
+        message: ''
+    },
+    validation = sysPolicy.accountRecovery({email: email}, 1)
     if (validation.isok) {
-        let {email, token, secret, confirmSecret } = payload.REQ_INPUTS
         /*verificar se email se encontra registado */
         const isEmailRegistered = await SYS_HELPER.isEmailRegistered(email)        
         if (isEmailRegistered) {
             const {user, sysaccount} = await SYS_HELPER.userAccountByUserEmail(email, payload.REQ_CONTEX)
             /* verificar se este utilizador tem uma conta valida para esta aplicacao */
             if (sysaccount) {
-                let updateAS = null
+                let updateAS = {
+                    httpstatus: 400,
+                    action: '',
+                    msgerr: 'Error. accountRecovery updateAS !?!'
+                }
+                /*switch: default
                 if (sysaccount.status !== sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION) {
                     updateAS = await updateAccountStatus(sysaccount, sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION)
                 } 
-                if (updateAS) {
-                    switch (updateAS.httpstatus) {
-                        case 200:
-                            if (updateAS.action === 'on_account_recovery_token_validation') {
-                                nextStage.message = 'We have sent you an email with the recovery code for your account.'
-                                nextStage.to = 'account-recovery'
+                */
+                switch (sysaccount.status) {
+                    case sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION:
+                        errmsg = null
+                        validation = sysPolicy.accountRecovery({token: token, secret: secret, confirmSecret: confirmSecret}, 2)
+                        if (validation.isok) {
+                            const validateToken = await sysaccount.validateToken(token)
+                            if (validateToken) {
+                                const changeSecret = await SYS_HELPER.userUpdate(user, {secret: secret})
+                                if (changeSecret) {
+                                    updateAS = await updateAccountStatus(sysaccount, sysPolicy.ACCOUNT_STATUS_ENABLED)
+                                }   else {
+                                    errmsg = 'Error change secret ?!?'
+                                }
+                            } else {
+                                errmsg = 'Invalid token code.'
                             }
-                            break
-                        default:
-
-                            break
+                        } else {
+                            errmsg = validation.error
+                        }
+                        if (errmsg) {
+                            updateAS.msgerr = errmsg
+                            updateAS.httpstatus = 400
+                            updateAS.action = null
+                        }
+                        break
+                    default:
+                        updateAS = await updateAccountStatus(sysaccount, sysPolicy.ACCOUNT_STATUS_ON_RECOVERY_TOKEN_VALIDATION)
+                        break
+                }
+                nextStage.to = 'account-recovery'
+                if (updateAS.httpstatus === 200) {
+                    if (updateAS.action === 'on_account_recovery_token_validation') {
+                        nextStage.message = 'We have sent you an email with the recovery code for your account.'
+                    } else if (updateAS.action === 'enabled') {
+                        nextStage.message = 'The password has changed successfully.'
                     }
                     return response.resultOutputDataOk(nextStage)
                 } else {
-                    errmsg = updateAS.msgerr
+                    nextStage.message = updateAS.msgerr
+                    return response.resultOutputDataError(nextStage)
                 }
             } else {
                 errmsg = 'The user account is not valid for this application.'
@@ -586,9 +667,10 @@ async function accountRecovery (payload) {
 const _instances = {
     signup: signup,
     signin: signin,
-    accountverification: accountverification,
+    accountverification: accountVerification,
     seedauxmodels: seedAuxModels,
     requestaccountverificationtoken: requestAccountVerificationToken,
+    requestaccountrecoverytoken: requestAccountRecoveryToken,
     accountrecovery: accountRecovery   
 }
 

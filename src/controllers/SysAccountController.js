@@ -29,6 +29,9 @@ module.exports = {
                         case ApiPolicy.sysapp.accountrecovery:
                             response = await syservices.accountrecovery(main)
                             break
+                        case ApiPolicy.sysapp.requestaccountrecoverytoken:
+                            response = await syservices.requestaccountrecoverytoken(main)
+                            break
                     }
                     if (response) {
                         httpstatus = response.iook ? 200 : 400

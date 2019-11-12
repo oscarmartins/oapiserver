@@ -7,6 +7,7 @@ const schemas = {
   accountRecovery: {
     checkEmail: {email: Joi.string().email({ minDomainAtoms: 2 }).required()},
     checkSecret: {
+      token: Joi.string().required(),
       secret: Joi.string().regex(new RegExp('^[a-zA-Z0-9]{8,32}$')).required().options({
         language: {
           string: {

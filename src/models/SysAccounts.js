@@ -10,6 +10,10 @@ const sysAccountsSchema = new Schema({
   dateUpdated: {type: Date}
 })
 
+sysAccountsSchema.methods.validateToken = async function (token) {
+  return this.token === token
+}
+
 sysAccountsSchema.pre('save', async function (next) {
   const $self = this
   if (!$self.isNew) {
