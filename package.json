@@ -21,7 +21,7 @@
     "express-session": "^1.16.2",
     "express-validator": "^5.3.1",
     "joi": "latest",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "knex": "^0.20.1",
     "mongoose": "^5.7.7",
     "morgan": "latest",
